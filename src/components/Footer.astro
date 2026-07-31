@@ -1,0 +1,32 @@
+---
+import { links } from '../config';
+
+const year = new Date().getFullYear();
+
+const trustLinks = [
+  { href: links.privacy, label: 'Privacy' },
+  { href: links.terms, label: 'Terms' },
+  { href: links.contact, label: 'Contact' },
+  { href: links.attribution, label: 'Attribution' },
+];
+---
+
+<footer class="border-t border-[var(--color-border-muted)] py-8">
+  <div class="mx-auto flex max-w-5xl flex-col gap-5 px-6 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex flex-col gap-2">
+      <span class="font-[var(--font-display)] text-sm font-semibold italic uppercase tracking-wide text-[var(--color-text-dim)]">
+        MyVu
+      </span>
+      <span class="text-xs text-[var(--color-text-dim)]">
+        &copy; {year} MyVu. All rights reserved.
+      </span>
+    </div>
+    <nav aria-label="Trust links" class="flex flex-wrap gap-x-4 gap-y-2 text-xs">
+      {trustLinks.map((link) => (
+        <a href={link.href} class="text-[var(--color-text-dim)] hover:text-[var(--color-text)]">
+          {link.label}
+        </a>
+      ))}
+    </nav>
+  </div>
+</footer>

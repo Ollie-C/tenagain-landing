@@ -1,0 +1,53 @@
+---
+const mockRanking = [
+  { rank: 1, title: 'The Shawshank Redemption', rating: 9.5, elo: 1900 },
+  { rank: 2, title: 'Parasite', rating: 9.0, elo: 1840 },
+  { rank: 3, title: 'The Dark Knight', rating: 9.0, elo: 1810 },
+  { rank: 4, title: 'Whiplash', rating: 8.5, elo: 1760 },
+  { rank: 5, title: 'Arrival', rating: 8.5, elo: 1720 },
+];
+---
+
+<section class="py-24">
+  <div class="mx-auto max-w-5xl px-6">
+    <div class="reveal">
+      <h2 class="mb-4 text-3xl font-bold tracking-tight text-[var(--color-text)] sm:text-4xl">
+        Your personal leaderboard
+      </h2>
+      <p class="mb-16 max-w-md text-[var(--color-text-muted)]">
+        Every rating and comparison feeds into your ELO ranking.
+        The more you use it, the more accurate it gets.
+      </p>
+    </div>
+
+    <div
+      class="reveal border-2 border-[var(--color-border)] bg-[var(--color-bg-elevated)]"
+      style="box-shadow: 4px 4px 0 0 var(--color-border)"
+    >
+      <div class="border-b border-[var(--color-border-muted)] px-6 py-4">
+        <span class="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+          Global Ranking
+        </span>
+      </div>
+
+      <div class="divide-y divide-[var(--color-border-muted)]">
+        {mockRanking.map((movie) => (
+          <div class="flex items-center gap-6 px-6 py-4">
+            <span class="w-8 shrink-0 font-[var(--font-display)] text-2xl font-bold italic text-[var(--color-rank)]">
+              {movie.rank}
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate font-medium text-[var(--color-text)]">{movie.title}</p>
+            </div>
+            <span class="shrink-0 text-sm tabular-nums text-[var(--color-text-muted)]">
+              {movie.rating.toFixed(1)}
+            </span>
+            <span class="hidden shrink-0 text-xs tabular-nums text-[var(--color-text-dim)] sm:block">
+              ELO {movie.elo}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

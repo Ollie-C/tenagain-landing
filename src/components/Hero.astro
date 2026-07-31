@@ -1,0 +1,93 @@
+---
+import { APP_URL, campaignHeroes } from '../config';
+---
+
+<section class="campaign-hero relative z-10 min-h-screen overflow-hidden bg-black text-white" aria-label="Rate a featured title">
+  <div class="campaign-hero__backdrops" aria-hidden="true">
+    {campaignHeroes.map((hero, index) => (
+      <div class:list={['campaign-hero__backdrop', index === 0 && 'is-active']} data-backdrop={index}>
+        <picture>
+          <source media="(min-width: 1024px)" srcset={`/heroes/${hero.id}-lg.jpg`} />
+          <img src={`/heroes/${hero.id}-sm.jpg`} alt="" loading={index === 0 ? 'eager' : 'lazy'} fetchpriority={index === 0 ? 'high' : 'auto'} />
+        </picture>
+        <div class="campaign-hero__scrim"></div>
+        <div class="campaign-hero__pixels"></div>
+      </div>
+    ))}
+  </div>
+
+  <div class="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col justify-between px-6 py-24">
+    <div class="flex justify-end"><a href={`${APP_URL}/login`} class="text-sm font-medium text-white/80 hover:text-white">Sign in</a></div>
+    <div class="flex flex-1 flex-col items-center justify-center text-center">
+      <p class="font-[var(--font-display)] text-5xl font-bold italic tracking-tight sm:text-7xl">MV</p>
+      <div class="campaign-hero__dots mt-7 flex gap-3" role="tablist" aria-label="Featured titles">
+        {campaignHeroes.map((hero, index) => <button type="button" class:list={['campaign-hero__dot', index === 0 && 'is-active']} data-dot={index} role="tab" aria-selected={index === 0 ? 'true' : 'false'} aria-label={`Show ${hero.title}`}></button>)}
+      </div>
+    </div>
+
+    <div class="campaign-hero__details grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
+      <div>
+        {campaignHeroes.map((hero, index) => <div class:list={['campaign-hero__title', index === 0 && 'is-active']} data-title={index}><p class="text-xs font-semibold tracking-[0.2em] text-white/70 uppercase">{hero.mediaType === 'movie' ? 'Film' : 'Series'} · {hero.year}</p><h1 class="mt-2 max-w-xl text-4xl font-[var(--font-display)] font-bold italic uppercase sm:text-6xl">{hero.title}</h1><a href={hero.creditUrl} target="_blank" rel="noopener noreferrer" class="mt-3 inline-block text-xs text-white/65 underline">Image: {hero.credit}</a></div>)}
+      </div>
+      <form id="campaign-rating" class="campaign-hero__score border border-white/60 bg-black/40 p-4 backdrop-blur-sm">
+        <label for="campaign-score" class="block text-xs font-semibold tracking-[0.18em] uppercase text-white/70">Your score</label>
+        <div class="mt-2 flex gap-2"><input id="campaign-score" name="score" type="number" min="0" max="10" step="0.5" required inputmode="decimal" placeholder="0–10" class="w-24 border border-white/50 bg-black/30 px-3 py-2 text-lg text-white" /><button class="border border-white bg-white px-4 py-2 text-sm font-semibold text-black">Rate</button></div>
+        <p id="campaign-error" class="mt-2 hidden text-xs text-red-300" role="alert"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script define:vars={{ campaignHeroes, guestUrl: APP_URL }}>
+  const heroes = campaignHeroes;
+  let active = 0;
+  const backdrops = Array.from(document.querySelectorAll('[data-backdrop]'));
+  const titles = Array.from(document.querySelectorAll('[data-title]'));
+  const dots = Array.from(document.querySelectorAll('[data-dot]'));
+  const form = document.querySelector('#campaign-rating');
+  const score = document.querySelector('#campaign-score');
+  const error = document.querySelector('#campaign-error');
+
+  function select(index) {
+    active = index;
+    backdrops.forEach((node, current) => node.classList.toggle('is-active', current === active));
+    titles.forEach((node, current) => node.classList.toggle('is-active', current === active));
+    dots.forEach((node, current) => { node.classList.toggle('is-active', current === active); node.setAttribute('aria-selected', String(current === active)); });
+  }
+  dots.forEach((dot, index) => {
+    dot.addEventListener('click', () => select(index));
+    dot.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      const next = (index + (event.key === 'ArrowRight' ? 1 : heroes.length - 1)) % heroes.length;
+      dots[next].focus(); select(next);
+    });
+  });
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const value = Number(score?.value);
+    if (!Number.isFinite(value) || value < 0 || value > 10 || Math.round(value * 2) !== value * 2) {
+      error.textContent = 'Enter a score from 0 to 10 in half-point steps.'; error.classList.remove('hidden'); return;
+    }
+    const hero = heroes[active];
+    if (!hero.tmdbId) { error.textContent = 'This campaign title is not configured yet.'; error.classList.remove('hidden'); return; }
+    const query = new URLSearchParams({ mediaType: hero.mediaType, tmdbId: String(hero.tmdbId), title: hero.title, year: String(hero.year), rating: String(value) });
+    window.location.assign(`${guestUrl}?${query.toString()}`);
+  });
+</script>
+
+<style>
+  .campaign-hero__backdrops, .campaign-hero__backdrop, .campaign-hero__backdrop picture, .campaign-hero__backdrop img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .campaign-hero__backdrop { opacity: 0; transition: opacity 420ms ease; overflow: hidden; }
+  .campaign-hero__backdrop.is-active { opacity: 1; }
+  .campaign-hero__backdrop img { object-fit: cover; object-position: center; }
+  .campaign-hero__scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.92), rgba(0,0,0,.2) 60%, rgba(0,0,0,.5)); }
+  .campaign-hero__pixels { position: absolute; inset: 0; background-image: linear-gradient(90deg, rgba(255,255,255,.09) 1px, transparent 1px), linear-gradient(rgba(255,255,255,.09) 1px, transparent 1px); background-size: 20px 20px; mask-image: linear-gradient(120deg, transparent 10%, #000 55%); animation: campaign-pixel-reveal 1000ms cubic-bezier(.16,1,.3,1) both; }
+  .campaign-hero__title { display: none; animation: campaign-copy-in 420ms ease both; }
+  .campaign-hero__title.is-active { display: block; }
+  .campaign-hero__dot { width: .7rem; height: .7rem; border-radius: 999px; border: 1px solid rgba(255,255,255,.75); background: transparent; }
+  .campaign-hero__dot.is-active { background: white; }
+  @keyframes campaign-pixel-reveal { from { opacity: .8; transform: scale(1.12); } to { opacity: 0; transform: scale(1); } }
+  @keyframes campaign-copy-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .campaign-hero__backdrop, .campaign-hero__title { transition: none; animation: none; } .campaign-hero__pixels { display: none; } }
+</style>

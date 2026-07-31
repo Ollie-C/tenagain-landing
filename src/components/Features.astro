@@ -1,0 +1,57 @@
+---
+const features = [
+  {
+    title: 'Track everything',
+    description: 'Never forget what you\'ve watched. Log movies and TV shows, build your watchlist, and keep your viewing history in one place.',
+  },
+  {
+    title: 'Rate on your terms',
+    description: '10-point scale with half-step precision. Your ratings directly shape your personal ranking — every score matters.',
+  },
+  {
+    title: 'ELO Rankings',
+    description: 'A smart algorithm that learns from every rating and comparison. The more you use it, the more accurate your ranking gets.',
+  },
+  {
+    title: 'Collections',
+    description: 'Curate lists for any occasion — genre deep-dives, yearly favorites, director retrospectives. Your taste, organized.',
+  },
+  {
+    title: 'Tier Lists',
+    description: 'Drag and drop into tiers. Save snapshots of your rankings over time and share them with friends.',
+  },
+  {
+    title: 'Head-to-head battles',
+    description: 'Movie A or Movie B? Quick pairwise comparisons are the fastest way to build an honest ranking.',
+  },
+];
+---
+
+<section class="py-24">
+  <div class="mx-auto max-w-3xl px-6">
+    <div class="reveal">
+      <h2 class="mb-4 text-3xl font-bold tracking-tight text-[var(--color-text)] sm:text-4xl">
+        Everything you need
+      </h2>
+      <p class="mb-16 max-w-md text-[var(--color-text-muted)]">
+        Track, rate, and rank your way. Multiple tools, one unified ranking.
+      </p>
+    </div>
+
+    <div class="grid gap-6">
+      {features.map((feature, i) => (
+        <div
+          class="neo-card reveal border-2 border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6"
+          style={`box-shadow: 3px 3px 0 0 var(--color-border); --reveal-delay: ${i * 60}ms`}
+        >
+          <h3 class="mb-3 text-lg font-semibold uppercase tracking-wide text-[var(--color-text)]">
+            {feature.title}
+          </h3>
+          <p class="text-sm leading-relaxed text-[var(--color-text-muted)]">
+            {feature.description}
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

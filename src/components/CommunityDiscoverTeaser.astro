@@ -1,0 +1,61 @@
+---
+import { APP_URL, links } from '../config';
+import { communitySpotlight } from '../communitySpotlight';
+
+const featuredRankerHref = communitySpotlight.featuredRankerUsername
+  ? `${APP_URL}/u/${communitySpotlight.featuredRankerUsername}`
+  : `${links.discover}?tab=lists`;
+const featuredListHref = communitySpotlight.featuredRankingListId
+  ? `${APP_URL}/ranking-list/${communitySpotlight.featuredRankingListId}`
+  : `${links.discover}?tab=lists`;
+---
+
+<section class="py-24">
+  <div class="mx-auto max-w-5xl px-6">
+    <div class="reveal">
+      <h2 class="mb-4 text-3xl font-bold tracking-tight text-[var(--color-text)] sm:text-4xl">
+        {communitySpotlight.headline}
+      </h2>
+      <p class="mb-10 max-w-xl text-[var(--color-text-muted)]">
+        {communitySpotlight.subcopy}
+      </p>
+    </div>
+
+    <div
+      class="reveal flex flex-col gap-4 border-2 border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8"
+      style="box-shadow: 4px 4px 0 0 var(--color-border)"
+      >
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-dim)]">
+          Featured this week
+        </p>
+        <p class="mt-2 text-lg font-semibold text-[var(--color-text)]">Discover in the app</p>
+        <p class="mt-1 text-sm text-[var(--color-text-muted)]">
+          Public lists, community charts, and once you join, taste matches and people to follow.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <a
+          href={featuredListHref}
+          class="inline-block border-2 border-[var(--color-border)] bg-[var(--color-bg)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text)] transition-colors hover:bg-[var(--color-bg-panel)]"
+          style="box-shadow: 3px 3px 0 0 var(--color-border)"
+        >
+          Featured list
+        </a>
+        <a
+          href={featuredRankerHref}
+          class="inline-block border-2 border-[var(--color-accent)] bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-accent-foreground)]"
+          style="box-shadow: 3px 3px 0 0 var(--color-border)"
+        >
+          Featured ranker
+        </a>
+        <a
+          href={links.register}
+          class="inline-block border-2 border-[var(--color-border)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text)]"
+        >
+          Join to find people
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

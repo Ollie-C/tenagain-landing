@@ -1,0 +1,80 @@
+---
+---
+
+<section class="border-y border-[var(--color-border-muted)] bg-[var(--color-bg-elevated)] py-24">
+  <div class="mx-auto max-w-5xl px-6">
+    <div class="reveal">
+      <h2 class="mb-4 text-3xl font-bold tracking-tight text-[var(--color-text)] sm:text-4xl">
+        Head-to-head battles
+      </h2>
+      <p class="mb-16 max-w-md text-[var(--color-text-muted)]">
+        Can't decide your top 10? Pick between two movies, round after round.
+        The ELO algorithm does the math.
+      </p>
+    </div>
+
+    <div
+      class="reveal border-2 border-[var(--color-border)] bg-[var(--color-bg)] p-6 sm:p-10"
+      style="box-shadow: 4px 4px 0 0 var(--color-border)"
+    >
+      <!-- Battle header -->
+      <div class="mb-8 text-center">
+        <span class="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-dim)]">
+          Round 7 of 15
+        </span>
+      </div>
+
+      <!-- Two movie cards side by side -->
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+
+        <!-- Movie A -->
+        <div
+          class="neo-card border-2 border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-5 text-center"
+          style="box-shadow: 3px 3px 0 0 var(--color-border)"
+        >
+          <div class="mb-3 font-[var(--font-display)] text-5xl font-bold italic text-[var(--color-text-dim)]">A</div>
+          <p class="text-lg font-semibold text-[var(--color-text)]">Interstellar</p>
+          <p class="mt-1 text-xs text-[var(--color-text-dim)]">2014 &middot; 8.7</p>
+          <div class="mt-4">
+            <span
+              class="inline-block border-2 border-[var(--color-accent)] px-6 py-2 text-xs font-semibold uppercase tracking-widest text-[var(--color-accent)]"
+              style="box-shadow: 2px 2px 0 0 var(--color-border)"
+            >
+              Pick this
+            </span>
+          </div>
+        </div>
+
+        <!-- VS divider -->
+        <div class="flex items-center justify-center">
+          <span class="font-[var(--font-display)] text-2xl font-bold italic text-[var(--color-text-dim)]">VS</span>
+        </div>
+
+        <!-- Movie B -->
+        <div
+          class="neo-card border-2 border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-5 text-center"
+          style="box-shadow: 3px 3px 0 0 var(--color-border)"
+        >
+          <div class="mb-3 font-[var(--font-display)] text-5xl font-bold italic text-[var(--color-text-dim)]">B</div>
+          <p class="text-lg font-semibold text-[var(--color-text)]">Blade Runner 2049</p>
+          <p class="mt-1 text-xs text-[var(--color-text-dim)]">2017 &middot; 8.0</p>
+          <div class="mt-4">
+            <span
+              class="inline-block border-2 border-[var(--color-accent)] px-6 py-2 text-xs font-semibold uppercase tracking-widest text-[var(--color-accent)]"
+              style="box-shadow: 2px 2px 0 0 var(--color-border)"
+            >
+              Pick this
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Battle footer -->
+      <div class="mt-8 flex items-center justify-center gap-6">
+        <span class="text-xs uppercase tracking-widest text-[var(--color-text-dim)]">Skip</span>
+        <span class="text-xs uppercase tracking-widest text-[var(--color-text-dim)]">Tie</span>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,50 @@
+---
+const steps = [
+  {
+    number: '01',
+    title: 'Add a movie',
+    description: 'Search by title, browse trending releases, or import your existing ratings from Letterboxd, IMDb, or CSV.',
+  },
+  {
+    number: '02',
+    title: 'Rate it',
+    description: 'Give it a score. Your ELO ranking updates instantly — every rating reshapes your personal leaderboard.',
+  },
+  {
+    number: '03',
+    title: 'See your true ranking',
+    description: 'Your leaderboard reveals which movies you actually rate highest. Refine it with battles, tier lists, and more.',
+  },
+];
+---
+
+<section class="border-y border-[var(--color-border-muted)] bg-[var(--color-bg-elevated)] py-24">
+  <div class="mx-auto max-w-5xl px-6">
+    <div class="reveal">
+      <h2 class="mb-4 text-3xl font-bold tracking-tight text-[var(--color-text)] sm:text-4xl">
+        How it works
+      </h2>
+      <p class="mb-16 max-w-md text-[var(--color-text-muted)]">
+        Three steps to a ranking that actually reflects your taste.
+      </p>
+    </div>
+
+    <div class="relative grid gap-12 sm:grid-cols-3 sm:gap-8">
+      <div class="absolute top-5 left-[calc(33.33%_-_1rem)] right-[calc(33.33%_-_1rem)] hidden h-px bg-[var(--color-border)] sm:block" aria-hidden="true"></div>
+
+      {steps.map((step, i) => (
+        <div class="reveal relative" style={`--reveal-delay: ${i * 100}ms`}>
+          <span class="relative z-10 mb-4 inline-block bg-[var(--color-bg-elevated)] pr-3 font-[var(--font-display)] text-4xl font-bold italic text-[var(--color-rank)]">
+            {step.number}
+          </span>
+          <h3 class="mb-3 text-xl font-semibold uppercase tracking-wide text-[var(--color-text)]">
+            {step.title}
+          </h3>
+          <p class="text-sm leading-relaxed text-[var(--color-text-muted)]">
+            {step.description}
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

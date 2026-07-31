@@ -1,0 +1,71 @@
+---
+import { links } from '../config';
+
+const trustLinks = [
+  { href: links.privacy, label: 'Privacy' },
+  { href: links.terms, label: 'Terms' },
+  { href: links.contact, label: 'Contact' },
+  { href: links.attribution, label: 'Attribution' },
+];
+---
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<header class="fixed top-0 left-0 right-0 z-50 border-b border-[var(--color-border-muted)] bg-[var(--color-bg)]/95 backdrop-blur-sm">
+  <nav class="mx-auto flex max-w-5xl items-center justify-between px-6 py-4" aria-label="Main navigation">
+    <a href="/" class="font-[var(--font-display)] text-2xl font-bold italic uppercase tracking-tight text-[var(--color-text)]">
+      MyVu
+    </a>
+    <div class="flex items-center gap-4">
+      <div class="hidden items-center gap-3 lg:flex" aria-label="Trust links">
+        {trustLinks.map((link) => (
+          <a
+            href={link.href}
+            class="text-xs font-medium text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
+          >
+            {link.label}
+          </a>
+        ))}
+      </div>
+      <!--
+        aria-label + aria-pressed are kept in sync by `Layout.astro` on:
+          - page load (based on persisted theme)
+          - click (inside the toggle handler)
+        This keeps screen-reader output accurate to the *current* theme state.
+      -->
+      <button
+        id="theme-toggle"
+        type="button"
+        class="flex h-9 w-9 items-center justify-center border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-text-dim)] transition-colors"
+        aria-label="Switch to light theme"
+        aria-pressed="false"
+      >
+        <svg class="theme-icon-sun h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <circle cx="12" cy="12" r="5" />
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+        </svg>
+        <svg class="theme-icon-moon hidden h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+        </svg>
+        <svg class="theme-icon-polaroid hidden h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <rect x="4" y="4" width="16" height="16" rx="1" />
+          <circle cx="12" cy="12" r="4" />
+          <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+        </svg>
+      </button>
+      <a
+        href={links.login}
+        class="text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+      >
+        Sign in
+      </a>
+      <a
+        href={links.guest}
+        class="neo-btn border-2 border-[var(--color-accent)] px-5 py-2 text-xs font-semibold uppercase tracking-widest text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)]"
+        style="box-shadow: 3px 3px 0 0 var(--color-border)"
+      >
+        Try MyVu
+      </a>
+    </div>
+  </nav>
+</header>
