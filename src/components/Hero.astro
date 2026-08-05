@@ -1,93 +1,622 @@
 ---
-import { APP_URL, campaignHeroes } from '../config';
+import { APP_URL, campaignHeroes, links } from '../config';
+
+const trustLinks = [
+  { href: links.privacy, label: 'Privacy' },
+  { href: links.terms, label: 'Terms' },
+  { href: links.contact, label: 'Contact' },
+  { href: links.attribution, label: 'Attribution' }
+];
 ---
 
-<section class="campaign-hero relative z-10 min-h-screen overflow-hidden bg-black text-white" aria-label="Rate a featured title">
+<section
+  class="campaign-hero"
+  aria-label="Score a featured title"
+  data-campaign-hero
+  data-app-url={APP_URL}
+>
   <div class="campaign-hero__backdrops" aria-hidden="true">
     {campaignHeroes.map((hero, index) => (
-      <div class:list={['campaign-hero__backdrop', index === 0 && 'is-active']} data-backdrop={index}>
+      <div
+        class:list={['campaign-hero__backdrop', index === 0 && 'is-active']}
+        data-hero-item
+        data-index={index}
+        data-id={hero.id}
+        data-media-type={hero.mediaType}
+        data-tmdb-id={hero.tmdbId}
+        data-title={hero.title}
+      >
         <picture>
           <source media="(min-width: 1024px)" srcset={`/heroes/${hero.id}-lg.jpg`} />
-          <img src={`/heroes/${hero.id}-sm.jpg`} alt="" loading={index === 0 ? 'eager' : 'lazy'} fetchpriority={index === 0 ? 'high' : 'auto'} />
+          <img
+            src={`/heroes/${hero.id}-sm.jpg`}
+            alt=""
+            loading={index === 0 || index === 3 ? 'eager' : 'lazy'}
+            fetchpriority={index === 0 ? 'high' : 'auto'}
+          />
         </picture>
-        <div class="campaign-hero__scrim"></div>
-        <div class="campaign-hero__pixels"></div>
       </div>
     ))}
+    <canvas class="campaign-hero__pixel-canvas" data-pixel-canvas aria-hidden="true"></canvas>
+    <div class="campaign-hero__scrim"></div>
   </div>
 
-  <div class="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col justify-between px-6 py-24">
-    <div class="flex justify-end"><a href={`${APP_URL}/login`} class="text-sm font-medium text-white/80 hover:text-white">Sign in</a></div>
-    <div class="flex flex-1 flex-col items-center justify-center text-center">
-      <p class="font-[var(--font-display)] text-5xl font-bold italic tracking-tight sm:text-7xl">MV</p>
-      <div class="campaign-hero__dots mt-7 flex gap-3" role="tablist" aria-label="Featured titles">
-        {campaignHeroes.map((hero, index) => <button type="button" class:list={['campaign-hero__dot', index === 0 && 'is-active']} data-dot={index} role="tab" aria-selected={index === 0 ? 'true' : 'false'} aria-label={`Show ${hero.title}`}></button>)}
+  <div class="campaign-hero__stage is-copy-visible" data-hero-stage>
+    <div class="campaign-hero__identity" aria-live="polite">
+      <div class="campaign-hero__poster-stack">
+        {campaignHeroes.map((hero, index) => (
+          <img
+            src={`/heroes/${hero.id}-poster.jpg`}
+            alt={`${hero.title} poster`}
+            class:list={['campaign-hero__poster', index === 0 && 'is-active']}
+            aria-hidden={index === 0 ? 'false' : 'true'}
+            loading={index === 0 || index === 3 ? 'eager' : 'lazy'}
+            data-poster={index}
+          />
+        ))}
+      </div>
+
+      <div class="campaign-hero__copy">
+        {campaignHeroes.map((hero, index) => (
+          <div class:list={['campaign-hero__details', index === 0 && 'is-active']} data-details={index}>
+            <p class="campaign-hero__kicker">
+              {hero.mediaType === 'movie' ? 'Film' : 'Series'} · {hero.year} · {hero.byline}
+            </p>
+            <h1>{hero.title}</h1>
+            <a href={hero.creditUrl} target="_blank" rel="noopener noreferrer" class="campaign-hero__credit">
+              Artwork via TMDB
+            </a>
+          </div>
+        ))}
+
+        <div class="campaign-hero__dots" role="tablist" aria-label="Featured titles" data-carousel-controls>
+          {campaignHeroes.slice(0, 3).map((hero, position) => (
+            <button
+              type="button"
+              class:list={['campaign-hero__dot', position === 0 && 'is-active']}
+              data-dot={position}
+              data-dot-position={position}
+              role="tab"
+              aria-selected={position === 0 ? 'true' : 'false'}
+              aria-label={`Show ${hero.title}`}
+            >
+              <span class="sr-only">{hero.title}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
 
-    <div class="campaign-hero__details grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
-      <div>
-        {campaignHeroes.map((hero, index) => <div class:list={['campaign-hero__title', index === 0 && 'is-active']} data-title={index}><p class="text-xs font-semibold tracking-[0.2em] text-white/70 uppercase">{hero.mediaType === 'movie' ? 'Film' : 'Series'} · {hero.year}</p><h1 class="mt-2 max-w-xl text-4xl font-[var(--font-display)] font-bold italic uppercase sm:text-6xl">{hero.title}</h1><a href={hero.creditUrl} target="_blank" rel="noopener noreferrer" class="mt-3 inline-block text-xs text-white/65 underline">Image: {hero.credit}</a></div>)}
+    <form class="campaign-hero__rating" data-rating-form>
+      <label for="campaign-score">How do you rate it?</label>
+      <div class="campaign-hero__rating-row">
+        <input
+          id="campaign-score"
+          name="score"
+          type="number"
+          min="0"
+          max="10"
+          step="0.5"
+          required
+          inputmode="decimal"
+          placeholder="0–10"
+          autocomplete="off"
+          data-score-input
+        />
+        <button class="campaign-hero__rate-button" type="submit">Score it</button>
       </div>
-      <form id="campaign-rating" class="campaign-hero__score border border-white/60 bg-black/40 p-4 backdrop-blur-sm">
-        <label for="campaign-score" class="block text-xs font-semibold tracking-[0.18em] uppercase text-white/70">Your score</label>
-        <div class="mt-2 flex gap-2"><input id="campaign-score" name="score" type="number" min="0" max="10" step="0.5" required inputmode="decimal" placeholder="0–10" class="w-24 border border-white/50 bg-black/30 px-3 py-2 text-lg text-white" /><button class="border border-white bg-white px-4 py-2 text-sm font-semibold text-black">Rate</button></div>
-        <p id="campaign-error" class="mt-2 hidden text-xs text-red-300" role="alert"></p>
-      </form>
-    </div>
+      <p class="campaign-hero__error" data-rating-error role="alert"></p>
+    </form>
+  </div>
+
+  <div class="campaign-hero__footer">
+    <nav aria-label="Trust links">
+      {trustLinks.map((link) => <a href={link.href}>{link.label}</a>)}
+    </nav>
   </div>
 </section>
 
-<script define:vars={{ campaignHeroes, guestUrl: APP_URL }}>
-  const heroes = campaignHeroes;
-  let active = 0;
-  const backdrops = Array.from(document.querySelectorAll('[data-backdrop]'));
-  const titles = Array.from(document.querySelectorAll('[data-title]'));
-  const dots = Array.from(document.querySelectorAll('[data-dot]'));
-  const form = document.querySelector('#campaign-rating');
-  const score = document.querySelector('#campaign-score');
-  const error = document.querySelector('#campaign-error');
+<script>
+  type MediaMode = 'movie' | 'tv_show';
+  type PixelHeroController = ReturnType<
+    (typeof import('../scripts/pixelHero'))['createPixelHero']
+  >;
+  type HeroItem = {
+    node: HTMLElement;
+    index: number;
+    id: string;
+    mediaType: MediaMode;
+    tmdbId: number;
+    title: string;
+  };
 
-  function select(index) {
-    active = index;
-    backdrops.forEach((node, current) => node.classList.toggle('is-active', current === active));
-    titles.forEach((node, current) => node.classList.toggle('is-active', current === active));
-    dots.forEach((node, current) => { node.classList.toggle('is-active', current === active); node.setAttribute('aria-selected', String(current === active)); });
+  const root = document.querySelector<HTMLElement>('[data-campaign-hero]');
+  const stage = root?.querySelector<HTMLElement>('[data-hero-stage]');
+  const canvas = root?.querySelector<HTMLCanvasElement>('[data-pixel-canvas]');
+  const form = root?.querySelector<HTMLFormElement>('[data-rating-form]');
+  const scoreInput = root?.querySelector<HTMLInputElement>('[data-score-input]');
+  const ratingError = root?.querySelector<HTMLElement>('[data-rating-error]');
+  const carouselControls = root?.querySelector<HTMLElement>('[data-carousel-controls]');
+  const modeButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-mode-option]'));
+  const heroItems: HeroItem[] = root
+    ? Array.from(root.querySelectorAll<HTMLElement>('[data-hero-item]')).map((node) => ({
+        node,
+        index: Number(node.dataset.index),
+        id: node.dataset.id ?? '',
+        mediaType: node.dataset.mediaType === 'tv_show' ? 'tv_show' : 'movie',
+        tmdbId: Number(node.dataset.tmdbId),
+        title: node.dataset.title ?? ''
+      }))
+    : [];
+  const details = root ? Array.from(root.querySelectorAll<HTMLElement>('[data-details]')) : [];
+  const posters = root ? Array.from(root.querySelectorAll<HTMLElement>('[data-poster]')) : [];
+  const dots = root ? Array.from(root.querySelectorAll<HTMLButtonElement>('[data-dot]')) : [];
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let pixelHero: PixelHeroController | null = null;
+  let pixelHeroPromise: Promise<PixelHeroController | null> | null = null;
+  const indicesByMode: Record<MediaMode, number[]> = {
+    movie: heroItems.filter((item) => item.mediaType === 'movie').map((item) => item.index),
+    tv_show: heroItems.filter((item) => item.mediaType === 'tv_show').map((item) => item.index)
+  };
+  const activeByMode: Record<MediaMode, number> = {
+    movie: indicesByMode.movie[Math.floor(Math.random() * indicesByMode.movie.length)] ?? 0,
+    tv_show: indicesByMode.tv_show[Math.floor(Math.random() * indicesByMode.tv_show.length)] ?? 3
+  };
+
+  let activeMode: MediaMode = 'movie';
+  let activeIndex = activeByMode.movie;
+  let rotationTimer: number | undefined;
+  let resizeTimer: number | undefined;
+  let controlsFocused = false;
+
+  function getPixelHero() {
+    if (pixelHero) return Promise.resolve(pixelHero);
+    if (!canvas) return Promise.resolve(null);
+    if (!pixelHeroPromise) {
+      pixelHeroPromise = import('../scripts/pixelHero').then(({ createPixelHero }) => {
+        pixelHero = createPixelHero(canvas);
+        return pixelHero;
+      });
+    }
+    return pixelHeroPromise;
   }
-  dots.forEach((dot, index) => {
-    dot.addEventListener('click', () => select(index));
+
+  function appUrl(pathname: string) {
+    return `${root?.dataset.appUrl ?? ''}${pathname}`;
+  }
+
+  function updateAppLinks() {
+    const discoverPath = `/discover?mediaType=${activeMode}`;
+    const signInLink = document.querySelector<HTMLAnchorElement>('[data-app-signin]');
+    if (signInLink) {
+      const signInUrl = new URL(appUrl('/login'));
+      signInUrl.searchParams.set('redirect', discoverPath);
+      signInLink.href = signInUrl.toString();
+    }
+  }
+
+  function preloadAround(index: number) {
+    const modeIndices = indicesByMode[activeMode];
+    const position = modeIndices.indexOf(index);
+    const preloadIndices = [index, modeIndices[(position + 1) % modeIndices.length]];
+    const large = window.matchMedia('(min-width: 1024px)').matches;
+    for (const preloadIndex of preloadIndices) {
+      const item = heroItems[preloadIndex];
+      if (!item) continue;
+      const backdrop = new Image();
+      backdrop.src = `/heroes/${item.id}-${large ? 'lg' : 'sm'}.jpg`;
+      const poster = new Image();
+      poster.src = `/heroes/${item.id}-poster.jpg`;
+    }
+  }
+
+  function clearRotation() {
+    if (rotationTimer !== undefined) window.clearTimeout(rotationTimer);
+    rotationTimer = undefined;
+  }
+
+  function scheduleRotation() {
+    clearRotation();
+    if (reducedMotion.matches || controlsFocused || document.hidden) return;
+    rotationTimer = window.setTimeout(() => select(nextIndex()), 8000);
+  }
+
+  function nextIndex(direction = 1) {
+    const modeIndices = indicesByMode[activeMode];
+    const position = modeIndices.indexOf(activeIndex);
+    return modeIndices[(position + direction + modeIndices.length) % modeIndices.length];
+  }
+
+  function revealCopy() {
+    stage?.classList.add('is-copy-visible');
+  }
+
+  function select(index: number, animate = true) {
+    const selected = heroItems[index];
+    if (!selected) return;
+    clearRotation();
+    pixelHero?.cancel();
+    activeIndex = index;
+    activeMode = selected.mediaType;
+    activeByMode[activeMode] = index;
+    stage?.classList.remove('is-copy-visible');
+    canvas?.classList.remove('is-active');
+    if (scoreInput) scoreInput.value = '';
+    if (ratingError) ratingError.textContent = '';
+
+    heroItems.forEach((item) => item.node.classList.toggle('is-active', item.index === index));
+    details.forEach((node) => node.classList.toggle('is-active', Number(node.dataset.details) === index));
+    posters.forEach((node) => {
+      const active = Number(node.dataset.poster) === index;
+      node.classList.toggle('is-active', active);
+      node.setAttribute('aria-hidden', String(!active));
+    });
+    const modeIndices = indicesByMode[activeMode];
+    dots.forEach((dot) => {
+      const position = Number(dot.dataset.dotPosition);
+      const dotIndex = modeIndices[position];
+      const item = heroItems[dotIndex];
+      if (!item) return;
+      dot.dataset.dot = String(dotIndex);
+      dot.classList.toggle('is-active', dotIndex === index);
+      dot.setAttribute('aria-selected', String(dotIndex === index));
+      dot.setAttribute('aria-label', `Show ${item.title}`);
+      const label = dot.querySelector('.sr-only');
+      if (label) label.textContent = item.title;
+      dot.tabIndex = dotIndex === index ? 0 : -1;
+    });
+    modeButtons.forEach((button) => {
+      const active = button.dataset.modeOption === activeMode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-checked', String(active));
+    });
+
+    updateAppLinks();
+    preloadAround(index);
+
+    if (!animate || reducedMotion.matches || !canvas) {
+      revealCopy();
+      scheduleRotation();
+      return;
+    }
+
+    const large = window.matchMedia('(min-width: 1024px)').matches;
+    const selectionIndex = index;
+    void getPixelHero().then((controller) => {
+      if (!controller || activeIndex !== selectionIndex) return;
+      return controller.play(`/heroes/${selected.id}-${large ? 'lg' : 'sm'}.jpg`, {
+        onStart: () => canvas.classList.add('is-active'),
+        onProgress: (progress) => {
+          if (progress >= 0.42) revealCopy();
+        },
+        onComplete: () => {
+          revealCopy();
+          scheduleRotation();
+        },
+        onError: () => canvas.classList.remove('is-active')
+      });
+    });
+  }
+
+  modeButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const mode = button.dataset.modeOption === 'tv_show' ? 'tv_show' : 'movie';
+      select(activeByMode[mode]);
+    });
+    button.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      const mode: MediaMode = activeMode === 'movie' ? 'tv_show' : 'movie';
+      const target = modeButtons.find((candidate) => candidate.dataset.modeOption === mode);
+      target?.focus();
+      select(activeByMode[mode]);
+    });
+  });
+
+  dots.forEach((dot) => {
+    dot.addEventListener('click', () => select(Number(dot.dataset.dot)));
     dot.addEventListener('keydown', (event) => {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       event.preventDefault();
-      const next = (index + (event.key === 'ArrowRight' ? 1 : heroes.length - 1)) % heroes.length;
-      dots[next].focus(); select(next);
+      const targetIndex = nextIndex(event.key === 'ArrowRight' ? 1 : -1);
+      const target = dots.find((candidate) => Number(candidate.dataset.dot) === targetIndex);
+      target?.focus();
+      select(targetIndex);
     });
   });
+
   form?.addEventListener('submit', (event) => {
     event.preventDefault();
-    const value = Number(score?.value);
-    if (!Number.isFinite(value) || value < 0 || value > 10 || Math.round(value * 2) !== value * 2) {
-      error.textContent = 'Enter a score from 0 to 10 in half-point steps.'; error.classList.remove('hidden'); return;
+    const rawValue = scoreInput?.value.trim() ?? '';
+    const value = Number(rawValue);
+    if (
+      rawValue === '' ||
+      !Number.isFinite(value) ||
+      value < 0 ||
+      value > 10 ||
+      !Number.isInteger(value * 2)
+    ) {
+      if (ratingError) ratingError.textContent = 'Use 0–10 in half-point steps.';
+      scoreInput?.focus();
+      return;
     }
-    const hero = heroes[active];
-    if (!hero.tmdbId) { error.textContent = 'This campaign title is not configured yet.'; error.classList.remove('hidden'); return; }
-    const query = new URLSearchParams({ mediaType: hero.mediaType, tmdbId: String(hero.tmdbId), title: hero.title, year: String(hero.year), rating: String(value) });
-    window.location.assign(`${guestUrl}?${query.toString()}`);
+
+    const selected = heroItems[activeIndex];
+    const destination = new URL(appUrl('/start'));
+    destination.searchParams.set('mediaType', selected.mediaType);
+    destination.searchParams.set('tmdbId', String(selected.tmdbId));
+    destination.searchParams.set('rating', String(value));
+    window.location.assign(destination.toString());
   });
+
+  const focusRegion = [carouselControls, form, ...modeButtons].filter(Boolean) as HTMLElement[];
+  focusRegion.forEach((region) => {
+    region.addEventListener('focusin', () => {
+      controlsFocused = true;
+      clearRotation();
+    });
+    region.addEventListener('focusout', () => {
+      window.setTimeout(() => {
+        controlsFocused = focusRegion.some((candidate) => candidate.contains(document.activeElement));
+        if (!controlsFocused) scheduleRotation();
+      });
+    });
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearRotation();
+    else scheduleRotation();
+  });
+  window.addEventListener('resize', () => {
+    if (resizeTimer !== undefined) window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => select(activeIndex), 180);
+  });
+  window.addEventListener('pagehide', () => pixelHero?.destroy(), { once: true });
+
+  select(activeIndex);
 </script>
 
 <style>
-  .campaign-hero__backdrops, .campaign-hero__backdrop, .campaign-hero__backdrop picture, .campaign-hero__backdrop img { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .campaign-hero__backdrop { opacity: 0; transition: opacity 420ms ease; overflow: hidden; }
+  .campaign-hero {
+    position: relative;
+    min-height: 100svh;
+    overflow: hidden;
+    background: #050505;
+    color: #fff;
+    isolation: isolate;
+  }
+  .campaign-hero__backdrops,
+  .campaign-hero__backdrop,
+  .campaign-hero__backdrop picture,
+  .campaign-hero__backdrop img,
+  .campaign-hero__pixel-canvas,
+  .campaign-hero__scrim {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .campaign-hero__backdrops { z-index: -1; }
+  .campaign-hero__backdrop {
+    opacity: 0;
+    overflow: hidden;
+    transition: opacity 360ms var(--ease-soft);
+  }
   .campaign-hero__backdrop.is-active { opacity: 1; }
-  .campaign-hero__backdrop img { object-fit: cover; object-position: center; }
-  .campaign-hero__scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.92), rgba(0,0,0,.2) 60%, rgba(0,0,0,.5)); }
-  .campaign-hero__pixels { position: absolute; inset: 0; background-image: linear-gradient(90deg, rgba(255,255,255,.09) 1px, transparent 1px), linear-gradient(rgba(255,255,255,.09) 1px, transparent 1px); background-size: 20px 20px; mask-image: linear-gradient(120deg, transparent 10%, #000 55%); animation: campaign-pixel-reveal 1000ms cubic-bezier(.16,1,.3,1) both; }
-  .campaign-hero__title { display: none; animation: campaign-copy-in 420ms ease both; }
-  .campaign-hero__title.is-active { display: block; }
-  .campaign-hero__dot { width: .7rem; height: .7rem; border-radius: 999px; border: 1px solid rgba(255,255,255,.75); background: transparent; }
-  .campaign-hero__dot.is-active { background: white; }
-  @keyframes campaign-pixel-reveal { from { opacity: .8; transform: scale(1.12); } to { opacity: 0; transform: scale(1); } }
-  @keyframes campaign-copy-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-  @media (prefers-reduced-motion: reduce) { .campaign-hero__backdrop, .campaign-hero__title { transition: none; animation: none; } .campaign-hero__pixels { display: none; } }
+  .campaign-hero__backdrop img {
+    object-fit: cover;
+    object-position: center;
+    filter: saturate(0.92) contrast(1.04);
+  }
+  .campaign-hero__pixel-canvas {
+    z-index: 2;
+    opacity: 0;
+    object-fit: cover;
+    transition: opacity 220ms ease;
+  }
+  .campaign-hero__pixel-canvas.is-active { opacity: 1; }
+  .campaign-hero__scrim {
+    z-index: 3;
+    background:
+      linear-gradient(to top, rgba(5, 5, 5, 0.98) 0%, rgba(5, 5, 5, 0.7) 24%, transparent 58%),
+      linear-gradient(to right, rgba(5, 5, 5, 0.84) 0%, rgba(5, 5, 5, 0.16) 48%, rgba(5, 5, 5, 0.34) 100%),
+      linear-gradient(to bottom, rgba(5, 5, 5, 0.7), transparent 24%);
+  }
+  .campaign-hero__stage {
+    display: grid;
+    width: min(100%, 90rem);
+    min-height: 100svh;
+    margin: 0 auto;
+    padding: clamp(7.5rem, 16vh, 11rem) clamp(1rem, 4vw, 4rem) clamp(5.5rem, 9vh, 7rem);
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: clamp(2rem, 5vw, 6rem);
+  }
+  .campaign-hero__identity {
+    display: flex;
+    min-width: 0;
+    align-items: end;
+    gap: clamp(1.1rem, 2.5vw, 2.25rem);
+  }
+  .campaign-hero__poster-stack {
+    position: relative;
+    width: clamp(7.5rem, 12vw, 10rem);
+    aspect-ratio: 2 / 3;
+    flex: 0 0 auto;
+    transform: translateY(0.75rem);
+    transition: opacity 500ms ease, transform 500ms var(--ease-emphasis);
+  }
+  .campaign-hero__poster {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 2px solid rgba(255, 255, 255, 0.68);
+    object-fit: cover;
+    opacity: 0;
+    box-shadow: 4px 4px 0 rgba(255, 255, 255, 0.82);
+    transition: opacity 260ms ease;
+  }
+  .campaign-hero__poster.is-active { opacity: 1; }
+  .campaign-hero__copy {
+    min-width: 0;
+    padding-bottom: 0.25rem;
+    transition: opacity 500ms ease, transform 500ms var(--ease-emphasis), clip-path 500ms ease;
+  }
+  .campaign-hero__details { display: none; }
+  .campaign-hero__details.is-active { display: block; }
+  .campaign-hero__kicker {
+    max-width: 38rem;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .campaign-hero h1 {
+    max-width: 46rem;
+    margin-top: 0.35rem;
+    color: #fff;
+    font-size: clamp(2.4rem, 6.2vw, 5.5rem);
+    line-height: 0.88;
+    letter-spacing: 0.04em;
+    text-wrap: balance;
+  }
+  .campaign-hero__credit {
+    display: inline-block;
+    margin-top: 0.7rem;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.68rem;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .campaign-hero__dots {
+    display: flex;
+    margin-top: 1.2rem;
+    gap: 0.65rem;
+  }
+  .campaign-hero__dot {
+    width: 2.2rem;
+    height: 0.3rem;
+    background: rgba(255, 255, 255, 0.36);
+  }
+  .campaign-hero__dot.is-active { background: #fff; }
+  .campaign-hero__rating {
+    width: min(100%, 21rem);
+    transition: opacity 500ms ease, transform 500ms var(--ease-emphasis), clip-path 500ms ease;
+  }
+  .campaign-hero__rating label {
+    display: block;
+    color: rgba(255, 255, 255, 0.72);
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+  .campaign-hero__rating-row {
+    display: grid;
+    margin-top: 0.7rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.7rem;
+  }
+  .campaign-hero__rating input {
+    width: 100%;
+    min-height: 3.45rem;
+    border: 2px solid rgba(255, 255, 255, 0.82);
+    background: rgba(5, 5, 5, 0.56);
+    padding: 0.72rem 0.9rem;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+    backdrop-filter: blur(10px);
+    box-shadow: 4px 4px 0 rgba(255, 255, 255, 0.36);
+  }
+  .campaign-hero__rating input::placeholder { color: rgba(255, 255, 255, 0.42); }
+  .campaign-hero__rate-button {
+    min-width: 6.6rem;
+    min-height: 3.45rem;
+    border: 2px solid #fff;
+    background: #fff;
+    padding: 0.72rem 1.1rem;
+    color: #050505;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    box-shadow: 4px 4px 0 rgba(255, 255, 255, 0.42);
+  }
+  .campaign-hero__rate-button:hover,
+  .campaign-hero__rate-button:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+  .campaign-hero__error {
+    min-height: 1rem;
+    margin-top: 0.55rem;
+    color: #fecaca;
+    font-size: 0.7rem;
+  }
+  .campaign-hero__stage:not(.is-copy-visible) .campaign-hero__poster-stack,
+  .campaign-hero__stage:not(.is-copy-visible) .campaign-hero__copy,
+  .campaign-hero__stage:not(.is-copy-visible) .campaign-hero__rating {
+    opacity: 0;
+    transform: translateY(0.4rem);
+    clip-path: inset(0 100% 0 0);
+  }
+  .campaign-hero__footer {
+    position: absolute;
+    inset: auto clamp(1rem, 4vw, 4rem) 1.15rem;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    color: rgba(255, 255, 255, 0.48);
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .campaign-hero__footer nav { display: flex; gap: 1rem; }
+  .campaign-hero__footer a:hover { color: #fff; }
+
+  @media (max-width: 767px) {
+    .campaign-hero__scrim {
+      background:
+        linear-gradient(to top, rgba(5, 5, 5, 0.99) 0%, rgba(5, 5, 5, 0.78) 34%, transparent 72%),
+        linear-gradient(to bottom, rgba(5, 5, 5, 0.62), transparent 24%);
+    }
+    .campaign-hero__stage {
+      min-height: 100svh;
+      padding: 6.5rem 1rem 5.4rem;
+      grid-template-columns: 1fr;
+      align-content: end;
+      gap: 1.5rem;
+    }
+    .campaign-hero__identity { align-items: end; gap: 1rem; }
+    .campaign-hero__poster-stack { width: 5.8rem; transform: none; }
+    .campaign-hero h1 { font-size: clamp(2rem, 10.5vw, 3.5rem); }
+    .campaign-hero__kicker {
+      max-width: 15rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .campaign-hero__credit { display: none; }
+    .campaign-hero__dots { margin-top: 0.9rem; }
+    .campaign-hero__rating { width: 100%; }
+    .campaign-hero__footer { bottom: 0.8rem; justify-content: center; }
+    .campaign-hero__footer nav { gap: 0.8rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .campaign-hero__backdrop,
+    .campaign-hero__poster,
+    .campaign-hero__poster-stack,
+    .campaign-hero__copy,
+    .campaign-hero__rating { transition: none; }
+    .campaign-hero__pixel-canvas { display: none; }
+  }
 </style>

@@ -11,7 +11,8 @@
   "dependencies": {
     "@astrojs/compiler-rs": "^0.3.2",
     "@astrojs/sitemap": "^3.7.3",
-    "astro": "^7.1.6"
+    "astro": "^7.1.6",
+    "three": "^0.183.2"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
