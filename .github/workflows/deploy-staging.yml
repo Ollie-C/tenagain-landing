@@ -25,6 +25,7 @@ jobs:
     environment: staging
     env:
       DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
+      PUBLIC_RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
 
     steps:
       - name: Check out tested commit
@@ -48,6 +49,13 @@ jobs:
 
       - name: Build landing site
         run: pnpm run build
+
+      - name: Verify built release identity
+        run: |
+          body="$(cat dist/api/release)"
+          jq -e --arg sha "$DEPLOY_SHA" \
+            '.status == "ok" and .release == $sha' \
+            <<<"$body" >/dev/null
 
       - name: Deploy stable staging preview
         uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3

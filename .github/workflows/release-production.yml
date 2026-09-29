@@ -28,6 +28,7 @@ jobs:
     environment: production
     env:
       DEPLOY_SHA: ${{ inputs.commit_sha }}
+      PUBLIC_RELEASE_SHA: ${{ inputs.commit_sha }}
 
     steps:
       - name: Check out repository history
@@ -61,6 +62,13 @@ jobs:
 
       - name: Build landing site
         run: pnpm run build
+
+      - name: Verify built release identity
+        run: |
+          body="$(cat dist/api/release)"
+          jq -e --arg sha "${DEPLOY_SHA,,}" \
+            '.status == "ok" and (.release | ascii_downcase) == $sha' \
+            <<<"$body" >/dev/null
 
       - name: Deploy approved production release
         uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3
