@@ -8,7 +8,7 @@ interface Props {
   ogImage?: string;
 }
 
-const { title, description, ogImage = '/og-myvu-v2.png' } = Astro.props;
+const { title, description, ogImage = '/og-tenagain-v2.png' } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -23,7 +23,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="application-name" content="MyVu" />
+    <meta name="application-name" content="tenagain" />
     <link rel="canonical" href={canonicalUrl} />
 
     <meta property="og:type" content="website" />
@@ -31,7 +31,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={new URL(ogImage, Astro.site)} />
-    <meta property="og:site_name" content="MyVu" />
+    <meta property="og:site_name" content="tenagain" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
@@ -43,8 +43,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "MyVu",
-      "url": "https://myvu.app",
+      "name": "tenagain",
+      "url": "https://tenagain.app",
       "applicationCategory": "EntertainmentApplication",
       "operatingSystem": "Web",
       "description": description,

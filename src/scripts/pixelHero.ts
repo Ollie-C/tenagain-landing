@@ -186,7 +186,7 @@ export function createPixelHero(canvas: HTMLCanvasElement) {
 			}
 		} catch (error) {
 			if (version === renderVersion) {
-				console.warn('MyVu hero pixel reveal unavailable; using the still image.', error);
+				console.warn('tenagain hero pixel reveal unavailable; using the still image.', error);
 				callbacks.onError?.();
 				callbacks.onComplete?.();
 			}

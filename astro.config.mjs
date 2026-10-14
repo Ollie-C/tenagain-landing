@@ -3,7 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
-  site: "https://myvu.app",
+  site: "https://tenagain.app",
   vite: {
     plugins: [tailwindcss()],
     build: {

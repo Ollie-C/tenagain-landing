@@ -1,7 +1,7 @@
 const configuredAppUrl = import.meta.env.PUBLIC_APP_URL?.trim();
 
 export const APP_URL = (
-	configuredAppUrl || (import.meta.env.DEV ? 'http://localhost:5173' : 'https://app.myvu.app')
+	configuredAppUrl || (import.meta.env.DEV ? 'http://localhost:5173' : 'https://app.tenagain.app')
 ).replace(/\/$/, '');
 
 export const links = {

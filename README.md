@@ -1,6 +1,6 @@
-# MyVu landing site
+# tenagain landing site
 
-Static Astro marketing site for `https://myvu.app`. It links into the SvelteKit application at `https://app.myvu.app`.
+Static Astro marketing site for `https://tenagain.app`. It links into the SvelteKit application at `https://app.tenagain.app`.
 
 ## Local development
 
@@ -25,8 +25,8 @@ Open `http://localhost:4321`.
 
 The site is fully static and requires no runtime secrets.
 
-- Canonical site URL: `https://myvu.app`
-- App URL: `https://app.myvu.app`
+- Canonical site URL: `https://tenagain.app`
+- App URL: `https://app.tenagain.app`
 - Build command: `pnpm build`
 - Output directory: `dist`
 - CI: `.github/workflows/ci.yml` builds on pushes to `main` and pull requests
@@ -34,3 +34,9 @@ The site is fully static and requires no runtime secrets.
 The canonical URLs are defined in `astro.config.mjs` and `src/config.ts`. Verify DNS and hosting status before launch; checked-in URLs describe intended configuration, not live availability.
 
 Shared workspace setup and deployment notes live in `../docs/`.
+
+## Landing views
+
+Score preserves the cinematic rating flow. Weekly embeds the app's competition widget only when opened. The tenagain view explains personal ranking and current free access. Use `/?view=weekly&competition=<slug>` or `/?view=product` for direct entry.
+
+Configure `PUBLIC_APP_URL` for the app. The app's `PUBLIC_LANDING_URL` must match this landing origin, and both production sites should share the HTTPS registrable domain so app-domain session cookies work inside the widget. Backend voting/Turnstile setup is documented in `../docs/architecture/weekly-competitions.md`.

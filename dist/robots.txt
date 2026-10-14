@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://myvu.app/sitemap-index.xml
+Sitemap: https://tenagain.app/sitemap-index.xml

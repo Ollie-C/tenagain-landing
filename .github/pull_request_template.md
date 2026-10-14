@@ -7,7 +7,7 @@
 - [ ] Production build passes
 - [ ] Responsive and keyboard behaviour was checked where appropriate
 - [ ] Links, metadata, and calls to action were checked
-- [ ] Related MyVu documentation was updated, or no documentation change is needed
+- [ ] Related tenagain documentation was updated, or no documentation change is needed
 
 ## Release safety
 

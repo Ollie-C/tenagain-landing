@@ -1,0 +1,154 @@
+---
+import Hero from './Hero.astro';
+import { APP_URL } from '../config';
+---
+<div class="landing-views" data-landing-views data-app-url={APP_URL}>
+  <nav class="view-navigation" aria-label="Landing views" data-view-navigation hidden>
+    <button type="button" class="view-arrow view-arrow--prev" data-view-prev aria-label="Previous landing view" aria-controls="view-monthly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m15 4-8 8 8 8" /></svg></button>
+    <button type="button" class="view-arrow view-arrow--next" data-view-next aria-label="Next landing view" aria-controls="view-monthly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 4 8 8-8 8" /></svg></button>
+  </nav>
+  <p class="sr-only" aria-live="polite" aria-atomic="true" data-view-announcement>Score a title</p>
+  <section id="view-score" role="region" aria-label="Score a title" tabindex="-1" data-view-panel="score">
+    <Hero />
+    <section class="welcome" aria-labelledby="welcome-title">
+      <h2 id="welcome-title">Welcome to <strong>tenagain.</strong></h2>
+      <p class="welcome-cycle"><span>Watch,</span><span>Rate,</span><span>Rank,</span><span>Watch.</span></p>
+    </section>
+  </section>
+  <section id="view-monthly" role="region" aria-label="Monthly competition" tabindex="-1" data-view-panel="monthly" hidden>
+    <div class="monthly-stage"><iframe title="tenagain monthly competition" data-weekly-frame referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+  </section>
+  <div class="view-bricks" data-view-bricks aria-hidden="true"></div>
+</div>
+<script>
+  const root = document.querySelector<HTMLElement>('[data-landing-views]');
+  if (root) {
+    let names = ['score'];
+    const arrows = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-view-prev], [data-view-next]'));
+    const navigation = root.querySelector<HTMLElement>('[data-view-navigation]');
+    const announcement = root.querySelector<HTMLElement>('[data-view-announcement]');
+    const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-view-panel]'));
+    const frame = root.querySelector<HTMLIFrameElement>('[data-weekly-frame]');
+    const appOrigin = new URL(root.dataset.appUrl || 'https://app.tenagain.app').origin;
+    const bricks = root.querySelector<HTMLElement>('[data-view-bricks]');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let transitionId = 0;
+    let animations: Animation[] = [];
+    let active = 'score';
+    let availabilityKnown = false;
+    let pendingMonthly = ['monthly', 'weekly'].includes(new URL(window.location.href).searchParams.get('view') || '');
+    function reveal(panel: HTMLElement, direction: number) {
+      animations.forEach(animation => animation.cancel());
+      animations = [];
+      if (!bricks || reducedMotion.matches) { bricks?.replaceChildren(); return; }
+      const columns = window.innerWidth < 760 ? 4 : 8;
+      const rows = 8;
+      bricks.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+      bricks.replaceChildren();
+      const id = ++transitionId;
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < columns; col++) {
+          const brick = document.createElement('span');
+          brick.style.background = '#101010';
+          bricks.append(brick);
+          const wave = direction > 0 ? col : columns - 1 - col;
+          const delay = wave * 26 + row * 18 + (row % 2) * 20;
+          const animation = brick.animate([{opacity: 1}, {opacity: 0}], {
+            duration: 400, delay, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'both'
+          });
+          animations.push(animation);
+        }
+      }
+      animations.push(panel.animate([{opacity: .4}, {opacity: 1}], {duration: 480, easing: 'ease-out'}));
+      void Promise.all(animations.map(animation => animation.finished.catch(() => {}))).then(() => {
+        if (id === transitionId) { bricks.replaceChildren(); animations = []; }
+      });
+    }
+
+    function select(name: string, history = true, focus = false) {
+      const previous = active;
+      if (name === 'weekly') name = 'monthly';
+      active = names.includes(name) ? name : 'score';
+      panels.forEach(panel => { panel.hidden = panel.dataset.viewPanel !== active; });
+      const panel = panels.find(panel => panel.dataset.viewPanel === active);
+      if (panel && previous !== active) reveal(panel, active === 'monthly' ? 1 : -1);
+      if (announcement) announcement.textContent = `${active === 'monthly' ? 'Monthly competition' : 'Score a title'}${names.length > 1 ? ` · view ${names.indexOf(active) + 1} of 2` : ''}`;
+      arrows.forEach(arrow => arrow.setAttribute('aria-controls', `view-${active === 'score' ? 'monthly' : 'score'}`));
+      if (focus) panel?.focus({preventScroll: true});
+      document.body.dataset.landingView = active;
+      if (history) {
+        const url = new URL(window.location.href);
+        if (active === 'score') url.searchParams.delete('view'); else url.searchParams.set('view',active);
+        window.history.pushState({},'',url);
+        window.scrollTo({top:0,behavior:'instant'});
+      }
+      document.dispatchEvent(new CustomEvent('tenagain:landing-view', {detail: active}));
+    }
+    function removeUnavailableView() {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('view')) { url.searchParams.delete('view'); window.history.replaceState({},'',url); }
+    }
+    arrows.forEach(arrow => {
+      arrow.addEventListener('keydown', event => {
+        if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key) || names.length < 2) return;
+        event.preventDefault();
+        select(event.key === 'Home' ? 'score' : event.key === 'End' ? 'monthly' : active === 'score' ? 'monthly' : 'score');
+      });
+      arrow.addEventListener('click', () => select(active === 'score' ? 'monthly' : 'score'));
+    });
+    window.addEventListener('popstate', () => {
+      const requested = new URL(window.location.href).searchParams.get('view') || 'score';
+      select(requested,false);
+      if (availabilityKnown && !names.includes(requested === 'weekly' ? 'monthly' : requested)) removeUnavailableView();
+    });
+    window.addEventListener('message', event => {
+      if (event.origin !== appOrigin || event.source !== frame?.contentWindow || !event.data) return;
+      if (event.data.type === 'tenagain:competition-state' && typeof event.data.active === 'boolean') {
+        names = event.data.active ? ['score', 'monthly'] : ['score'];
+        if (navigation) navigation.hidden = !event.data.active;
+        if (!availabilityKnown) {
+          availabilityKnown = true;
+          if (pendingMonthly && event.data.active) select('monthly',false);
+          else if (!event.data.active) removeUnavailableView();
+          pendingMonthly = false;
+        } else if (!event.data.active && active === 'monthly') {
+          select('score',false,true); removeUnavailableView();
+        }
+      } else if (event.data.type === 'tenagain:competition-resize') {
+        const height = Number(event.data.height);
+        if (frame && Number.isFinite(height) && height >= 100 && height <= 10000) frame.style.height = `${Math.ceil(height)}px`;
+      }
+    });
+    select('score',false);
+    // Checking through the existing embed avoids cross-origin cookies and a second public API.
+    if (frame) {
+      const requested = new URL(window.location.href).searchParams.get('competition') || 'current';
+      const slug = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requested) ? requested : 'current';
+      frame.src = `${appOrigin}/embed/competitions/${encodeURIComponent(slug)}`;
+    }
+    if (new URL(window.location.href).searchParams.get('view') === 'product') removeUnavailableView();
+  }
+</script>
+<style>
+[hidden]{display:none!important}
+.view-bricks{position:fixed;inset:0;z-index:25;display:grid;grid-template-rows:repeat(8,1fr);pointer-events:none}
+.view-navigation{position:fixed;inset:0;z-index:30;pointer-events:none;color:#fff}
+.view-arrow{position:absolute;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:64px;height:112px;padding:8px;border:0;box-shadow:none;background:transparent;color:rgba(255,255,255,.8);cursor:pointer;border-radius:0;pointer-events:auto;transition:color 150ms ease}
+.view-arrow--prev{left:clamp(4px,1vw,18px)}.view-arrow--next{right:clamp(4px,1vw,18px)}
+.view-arrow svg{width:48px;height:80px;filter:drop-shadow(0 1px 8px rgba(0,0,0,.7))}
+.view-arrow:hover,.view-arrow:active{color:#fff;background:transparent;box-shadow:none;transform:translateY(-50%)}
+.view-arrow:focus-visible{outline:2px solid #fff;outline-offset:-4px}
+.monthly-stage{width:calc(100% - 160px);max-width:1180px;margin:auto;padding:7rem 0 3rem;min-height:100svh}
+.monthly-stage iframe{display:block;width:100%;height:850px;min-height:0;border:0;background:#101010;color-scheme:dark}
+.welcome{max-width:1180px;margin:auto;padding:72px 48px 32px;display:grid;grid-template-columns:1fr 1fr;gap:24px;color:#eee;border-top:1px solid #333}
+.welcome h2{font-size:clamp(20px,2.5vw,30px);font-weight:400;line-height:1.4;margin:4px 0 0;color:#aaa}
+.welcome h2 strong{color:#fff;font-weight:600}
+.welcome-cycle{font-family:var(--font-display);font-size:clamp(42px,6vw,70px);line-height:1.05;margin:0;font-weight:600;letter-spacing:.025em}
+.welcome-cycle span{display:block}.welcome-cycle span:last-child{color:#777}
+
+:global(body){background:#0a0a0a}
+:global(body[data-landing-view=monthly]){background:#101010!important}
+:global(body[data-landing-view=monthly]::before),:global(body[data-landing-view=monthly]::after),:global(body[data-landing-view=monthly] .landing-nav::after){display:none}
+:global(body[data-landing-view=monthly] .media-switcher){visibility:hidden}
+@media(max-width:760px){.view-arrow{width:36px;height:88px;padding:4px}.view-arrow svg{width:28px;height:60px}.view-arrow--prev{left:0}.view-arrow--next{right:0}.monthly-stage{width:calc(100% - 80px);padding:7rem 0 2rem}.welcome{padding:44px 32px 28px;grid-template-columns:1fr;gap:24px}.welcome-cycle{font-size:52px}}
+</style>

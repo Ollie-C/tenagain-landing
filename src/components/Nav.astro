@@ -8,7 +8,7 @@ const initialRedirect = encodeURIComponent('/discover?mediaType=movie');
 
 <header class="landing-nav">
   <nav class="landing-nav__inner" aria-label="Main navigation">
-    <a href="/" class="landing-nav__brand" aria-label="MyVu home">MV</a>
+    <a href="/" class="landing-nav__brand" aria-label="tenagain home">TA</a>
 
     <div class="media-switcher" role="radiogroup" aria-label="Media type">
       <button type="button" role="radio" aria-label="Movies" aria-checked="true" class="media-switcher__option is-active" data-mode-option="movie">
@@ -20,7 +20,14 @@ const initialRedirect = encodeURIComponent('/discover?mediaType=movie');
     </div>
 
     <div class="landing-nav__actions">
+      <a href={APP_URL} class="landing-nav__signin"><span class="open-label-wide">Open tenagain</span><span class="open-label-small">Open app</span> ↗</a>
       <a href={`${APP_URL}/login?redirect=${initialRedirect}`} class="landing-nav__signin" data-app-signin>Sign in</a>
     </div>
   </nav>
 </header>
+
+<style>
+  .landing-nav__signin {white-space:nowrap}
+  .open-label-small {display:none}
+  @media(max-width:639px){.open-label-small{display:inline}.open-label-wide{display:none}}
+</style>

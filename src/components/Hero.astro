@@ -217,7 +217,7 @@ const trustLinks = [
 
   function scheduleRotation() {
     clearRotation();
-    if (reducedMotion.matches || controlsFocused || document.hidden) return;
+    if (reducedMotion.matches || controlsFocused || document.hidden || (document.body.dataset.landingView && document.body.dataset.landingView !== 'score')) return;
     rotationTimer = window.setTimeout(() => select(nextIndex()), 8000);
   }
 
@@ -283,7 +283,7 @@ const trustLinks = [
     const large = window.matchMedia('(min-width: 1024px)').matches;
     const selectionIndex = index;
     void getPixelHero().then((controller) => {
-      if (!controller || activeIndex !== selectionIndex) return;
+      if (!controller || activeIndex !== selectionIndex || (document.body.dataset.landingView && document.body.dataset.landingView !== 'score')) return;
       return controller.play(`/heroes/${selected.id}-${large ? 'lg' : 'sm'}.jpg`, {
         onStart: () => canvas.classList.add('is-active'),
         onProgress: (progress) => {
@@ -293,8 +293,10 @@ const trustLinks = [
           revealCopy();
           scheduleRotation();
         },
-        onError: () => canvas.classList.remove('is-active')
+        onError: () => { canvas.classList.remove('is-active'); revealCopy(); scheduleRotation(); }
       });
+    }).catch(() => {
+      if (activeIndex === selectionIndex) { canvas?.classList.remove('is-active'); revealCopy(); scheduleRotation(); }
     });
   }
 
@@ -363,13 +365,18 @@ const trustLinks = [
     });
   });
 
+  document.addEventListener('tenagain:landing-view', (event) => {
+    if ((event as CustomEvent<string>).detail === 'score') scheduleRotation();
+    else { clearRotation(); pixelHero?.cancel(); canvas?.classList.remove('is-active'); revealCopy(); }
+  });
+
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) clearRotation();
     else scheduleRotation();
   });
   window.addEventListener('resize', () => {
     if (resizeTimer !== undefined) window.clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(() => select(activeIndex), 180);
+    resizeTimer = window.setTimeout(() => { if (!document.body.dataset.landingView || document.body.dataset.landingView === 'score') select(activeIndex); }, 180);
   });
   window.addEventListener('pagehide', () => pixelHero?.destroy(), { once: true });
 
