@@ -27,11 +27,12 @@ const trustLinks = [
         data-title={hero.title}
       >
         <picture>
-          <source media="(min-width: 1024px)" srcset={`/heroes/${hero.id}-lg.jpg`} />
+          <source media="(min-width: 1024px)" srcset={index === 0 ? `/heroes/${hero.id}-lg.jpg` : undefined} data-srcset={`/heroes/${hero.id}-lg.jpg`} />
           <img
-            src={`/heroes/${hero.id}-sm.jpg`}
+            src={index === 0 ? `/heroes/${hero.id}-sm.jpg` : undefined}
+            data-src={`/heroes/${hero.id}-sm.jpg`}
             alt=""
-            loading={index === 0 || index === 3 ? 'eager' : 'lazy'}
+            loading={index === 0 ? 'eager' : 'lazy'}
             fetchpriority={index === 0 ? 'high' : 'auto'}
           />
         </picture>
@@ -46,11 +47,12 @@ const trustLinks = [
       <div class="campaign-hero__poster-stack">
         {campaignHeroes.map((hero, index) => (
           <img
-            src={`/heroes/${hero.id}-poster.jpg`}
+            src={index === 0 ? `/heroes/${hero.id}-poster.jpg` : undefined}
+            data-src={`/heroes/${hero.id}-poster.jpg`}
             alt={`${hero.title} poster`}
             class:list={['campaign-hero__poster', index === 0 && 'is-active']}
             aria-hidden={index === 0 ? 'false' : 'true'}
-            loading={index === 0 || index === 3 ? 'eager' : 'lazy'}
+            loading={index === 0 ? 'eager' : 'lazy'}
             data-poster={index}
           />
         ))}
@@ -239,15 +241,22 @@ const trustLinks = [
     activeIndex = index;
     activeMode = selected.mediaType;
     activeByMode[activeMode] = index;
-    stage?.classList.remove('is-copy-visible');
+    // Controls stay usable while the optional background effect loads or plays.
+    revealCopy();
     canvas?.classList.remove('is-active');
     if (scoreInput) scoreInput.value = '';
     if (ratingError) ratingError.textContent = '';
 
     heroItems.forEach((item) => item.node.classList.toggle('is-active', item.index === index));
+    const activateImage = (node: HTMLElement) => {
+      if (node.dataset.srcset) node.setAttribute('srcset', node.dataset.srcset);
+      if (node.dataset.src) node.setAttribute('src', node.dataset.src);
+    };
+    selected.node.querySelectorAll<HTMLElement>('[data-src], [data-srcset]').forEach(activateImage);
     details.forEach((node) => node.classList.toggle('is-active', Number(node.dataset.details) === index));
     posters.forEach((node) => {
       const active = Number(node.dataset.poster) === index;
+      if (active) activateImage(node);
       node.classList.toggle('is-active', active);
       node.setAttribute('aria-hidden', String(!active));
     });
@@ -272,7 +281,7 @@ const trustLinks = [
     });
 
     updateAppLinks();
-    preloadAround(index);
+    if (animate) preloadAround(index);
 
     if (!animate || reducedMotion.matches || !canvas) {
       revealCopy();
@@ -283,7 +292,8 @@ const trustLinks = [
     const large = window.matchMedia('(min-width: 1024px)').matches;
     const selectionIndex = index;
     void getPixelHero().then((controller) => {
-      if (!controller || activeIndex !== selectionIndex || (document.body.dataset.landingView && document.body.dataset.landingView !== 'score')) return;
+      if (activeIndex !== selectionIndex || (document.body.dataset.landingView && document.body.dataset.landingView !== 'score')) return;
+      if (!controller) { scheduleRotation(); return; }
       return controller.play(`/heroes/${selected.id}-${large ? 'lg' : 'sm'}.jpg`, {
         onStart: () => canvas.classList.add('is-active'),
         onProgress: (progress) => {
@@ -380,7 +390,7 @@ const trustLinks = [
   });
   window.addEventListener('pagehide', () => pixelHero?.destroy(), { once: true });
 
-  select(activeIndex);
+  select(activeIndex, false);
 </script>
 
 <style>

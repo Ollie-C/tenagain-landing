@@ -4,6 +4,7 @@ import { APP_URL } from '../config';
 ---
 <div class="landing-views" data-landing-views data-app-url={APP_URL}>
   <nav class="view-navigation" aria-label="Landing views" data-view-navigation hidden>
+    <button type="button" class="view-entry" data-view-entry aria-controls="view-monthly">Monthly live ↗</button>
     <button type="button" class="view-arrow view-arrow--prev" data-view-prev aria-label="Previous landing view" aria-controls="view-monthly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m15 4-8 8 8 8" /></svg></button>
     <button type="button" class="view-arrow view-arrow--next" data-view-next aria-label="Next landing view" aria-controls="view-monthly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 4 8 8-8 8" /></svg></button>
   </nav>
@@ -11,12 +12,12 @@ import { APP_URL } from '../config';
   <section id="view-score" role="region" aria-label="Score a title" tabindex="-1" data-view-panel="score">
     <Hero />
     <section class="welcome" aria-labelledby="welcome-title">
-      <h2 id="welcome-title">Welcome to <strong>tenagain.</strong></h2>
+      <div><h2 id="welcome-title">Welcome to <strong>tenagain.</strong></h2><p class="welcome-about">Your movie and TV taste, scored, ranked and shared.</p><p data-competition-fallback hidden>Can't load this month's event. <a href={`${APP_URL}/competitions/current`}>Open competitions ↗</a></p></div>
       <p class="welcome-cycle"><span>Watch,</span><span>Rate,</span><span>Rank,</span><span>Watch.</span></p>
     </section>
   </section>
   <section id="view-monthly" role="region" aria-label="Monthly competition" tabindex="-1" data-view-panel="monthly" hidden>
-    <div class="monthly-stage"><iframe title="tenagain monthly competition" data-weekly-frame referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+    <div class="monthly-stage"><p class="competition-link"><a href={`${APP_URL}/competitions/current`} data-competition-link>Open competition in the app ↗</a></p><iframe title="tenagain monthly competition" data-weekly-frame allow="clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
   </section>
   <div class="view-bricks" data-view-bricks aria-hidden="true"></div>
 </div>
@@ -26,6 +27,9 @@ import { APP_URL } from '../config';
     let names = ['score'];
     const arrows = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-view-prev], [data-view-next]'));
     const navigation = root.querySelector<HTMLElement>('[data-view-navigation]');
+    const entry = root.querySelector<HTMLButtonElement>('[data-view-entry]');
+    const fallback = root.querySelector<HTMLElement>('[data-competition-fallback]');
+    const competitionLink = root.querySelector<HTMLAnchorElement>('[data-competition-link]');
     const announcement = root.querySelector<HTMLElement>('[data-view-announcement]');
     const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-view-panel]'));
     const frame = root.querySelector<HTMLIFrameElement>('[data-weekly-frame]');
@@ -36,7 +40,13 @@ import { APP_URL } from '../config';
     let animations: Animation[] = [];
     let active = 'score';
     let availabilityKnown = false;
+    let liveLabel = 'Monthly live ↗';
     let pendingMonthly = ['monthly', 'weekly'].includes(new URL(window.location.href).searchParams.get('view') || '');
+    const requested = new URL(window.location.href).searchParams.get('competition') || 'current';
+    const slug = requested.length <= 100 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requested) ? requested : 'current';
+    function ensureFrame() {
+      if (frame && !frame.getAttribute('src')) frame.src = `${appOrigin}/embed/competitions/${encodeURIComponent(slug)}`;
+    }
     function reveal(panel: HTMLElement, direction: number) {
       animations.forEach(animation => animation.cancel());
       animations = [];
@@ -69,11 +79,13 @@ import { APP_URL } from '../config';
       const previous = active;
       if (name === 'weekly') name = 'monthly';
       active = names.includes(name) ? name : 'score';
+      if (active === 'monthly') ensureFrame();
       panels.forEach(panel => { panel.hidden = panel.dataset.viewPanel !== active; });
       const panel = panels.find(panel => panel.dataset.viewPanel === active);
       if (panel && previous !== active) reveal(panel, active === 'monthly' ? 1 : -1);
       if (announcement) announcement.textContent = `${active === 'monthly' ? 'Monthly competition' : 'Score a title'}${names.length > 1 ? ` · view ${names.indexOf(active) + 1} of 2` : ''}`;
       arrows.forEach(arrow => arrow.setAttribute('aria-controls', `view-${active === 'score' ? 'monthly' : 'score'}`));
+      if (entry) { entry.textContent = active === 'score' ? liveLabel : 'Score a title ↗'; entry.setAttribute('aria-controls', `view-${active === 'score' ? 'monthly' : 'score'}`); }
       if (focus) panel?.focus({preventScroll: true});
       document.body.dataset.landingView = active;
       if (history) {
@@ -88,6 +100,37 @@ import { APP_URL } from '../config';
       const url = new URL(window.location.href);
       if (url.searchParams.has('view')) { url.searchParams.delete('view'); window.history.replaceState({},'',url); }
     }
+    function setAvailability(isActive: boolean) {
+      names = isActive ? ['score', 'monthly'] : ['score'];
+      if (navigation) navigation.hidden = !isActive;
+      if (!availabilityKnown) {
+        availabilityKnown = true;
+        if (pendingMonthly && isActive) select('monthly', false);
+        else if (!isActive) removeUnavailableView();
+        pendingMonthly = false;
+      } else if (!isActive && active === 'monthly') {
+        select('score', false, true); removeUnavailableView();
+      }
+    }
+    async function loadAvailability() {
+      if (frame?.getAttribute('src')) return; // Once opened, the widget reports its own state.
+      try {
+        const url = new URL('/api/competitions/availability', appOrigin);
+        url.searchParams.set('competition', slug);
+        const response = await fetch(url, { credentials: 'omit', signal: AbortSignal.timeout(6000) });
+        if (!response.ok) throw new Error('Availability unavailable');
+        const state = await response.json();
+        if (typeof state.active !== 'boolean') throw new Error('Invalid availability');
+        liveLabel = state.round ? `Monthly live · Round ${state.round} ↗` : 'Monthly live ↗';
+        if (entry && active === 'score') entry.textContent = liveLabel;
+        if (competitionLink && typeof state.slug === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(state.slug)) competitionLink.href = `${appOrigin}/competitions/${state.slug}`;
+        if (fallback) fallback.hidden = true;
+        setAvailability(state.active);
+      } catch {
+        if (fallback) fallback.hidden = false;
+      }
+    }
+    entry?.addEventListener('click', () => select(active === 'score' ? 'monthly' : 'score'));
     arrows.forEach(arrow => {
       arrow.addEventListener('keydown', event => {
         if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key) || names.length < 2) return;
@@ -104,28 +147,16 @@ import { APP_URL } from '../config';
     window.addEventListener('message', event => {
       if (event.origin !== appOrigin || event.source !== frame?.contentWindow || !event.data) return;
       if (event.data.type === 'tenagain:competition-state' && typeof event.data.active === 'boolean') {
-        names = event.data.active ? ['score', 'monthly'] : ['score'];
-        if (navigation) navigation.hidden = !event.data.active;
-        if (!availabilityKnown) {
-          availabilityKnown = true;
-          if (pendingMonthly && event.data.active) select('monthly',false);
-          else if (!event.data.active) removeUnavailableView();
-          pendingMonthly = false;
-        } else if (!event.data.active && active === 'monthly') {
-          select('score',false,true); removeUnavailableView();
-        }
+        setAvailability(event.data.active);
       } else if (event.data.type === 'tenagain:competition-resize') {
         const height = Number(event.data.height);
         if (frame && Number.isFinite(height) && height >= 100 && height <= 10000) frame.style.height = `${Math.ceil(height)}px`;
       }
     });
     select('score',false);
-    // Checking through the existing embed avoids cross-origin cookies and a second public API.
-    if (frame) {
-      const requested = new URL(window.location.href).searchParams.get('competition') || 'current';
-      const slug = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requested) ? requested : 'current';
-      frame.src = `${appOrigin}/embed/competitions/${encodeURIComponent(slug)}`;
-    }
+    void loadAvailability();
+    const availabilityPoll = window.setInterval(() => { if (!document.hidden) void loadAvailability(); }, 60000);
+    window.addEventListener('pagehide', () => window.clearInterval(availabilityPoll), { once: true });
     if (new URL(window.location.href).searchParams.get('view') === 'product') removeUnavailableView();
   }
 </script>
@@ -133,6 +164,10 @@ import { APP_URL } from '../config';
 [hidden]{display:none!important}
 .view-bricks{position:fixed;inset:0;z-index:25;display:grid;grid-template-rows:repeat(8,1fr);pointer-events:none}
 .view-navigation{position:fixed;inset:0;z-index:30;pointer-events:none;color:#fff}
+.view-entry{position:absolute;top:5.5rem;right:clamp(1rem,4vw,4rem);pointer-events:auto;padding:6px 10px;border:1px solid #ffffff66;background:#101010cc;color:#fff;font-size:11px;box-shadow:none}
+.view-entry:hover{background:#101010;transform:none;box-shadow:none}
+.welcome-about,.competition-link{font-size:13px;line-height:1.5;color:#bbb;margin:12px 0}
+.competition-link{margin-bottom:16px}
 .view-arrow{position:absolute;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:64px;height:112px;padding:8px;border:0;box-shadow:none;background:transparent;color:rgba(255,255,255,.8);cursor:pointer;border-radius:0;pointer-events:auto;transition:color 150ms ease}
 .view-arrow--prev{left:clamp(4px,1vw,18px)}.view-arrow--next{right:clamp(4px,1vw,18px)}
 .view-arrow svg{width:48px;height:80px;filter:drop-shadow(0 1px 8px rgba(0,0,0,.7))}

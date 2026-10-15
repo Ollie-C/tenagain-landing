@@ -37,6 +37,6 @@ Shared workspace setup and deployment notes live in `../docs/`.
 
 ## Landing views
 
-Score preserves the cinematic rating flow. Weekly embeds the app's competition widget only when opened. The tenagain view explains personal ranking and current free access. Use `/?view=weekly&competition=<slug>` or `/?view=product` for direct entry.
+Score preserves the cinematic rating flow. Monthly shows the app's competition widget after explicit entry; chevrons and a labeled live-event button connect the two views. Use `/?view=weekly&competition=<slug>` for a competition deep link. A credential-free availability request runs before iframe entry and does not create a guest. Score controls remain usable when the optional WebGL effect fails; inactive images load when selected.
 
 Configure `PUBLIC_APP_URL` for the app. The app's `PUBLIC_LANDING_URL` must match this landing origin, and both production sites should share the HTTPS registrable domain so app-domain session cookies work inside the widget. Backend voting/Turnstile setup is documented in `../docs/architecture/weekly-competitions.md`.
