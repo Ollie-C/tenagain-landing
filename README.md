@@ -56,7 +56,7 @@ The `Deploy staging` workflow uses this repository's GitHub **staging** environm
 | `CLOUDFLARE_API_TOKEN` | Secret | Cloudflare token authorized to read this Pages project/deployment metadata and deploy it |
 | `CLOUDFLARE_ACCOUNT_ID` | Secret | Account containing that project |
 | `CLOUDFLARE_PAGES_PROJECT` | Variable | `tenagain-landing`, the reviewed Direct Upload project |
-| `STAGING_PAGES_PROJECT_ID` | Variable | Independently owner-verified project UUID; unresolved in the current handoff, do not guess |
+| `STAGING_PAGES_PROJECT_ID` | Variable | `7b1de655-9592-4dc5-bcbf-0c5c89fa13bd`, independently verified in the 21 October owner identity receipt; setting the variable remains an owner action |
 
 Credentials in the frontend repository are not automatically available here. The workflow accepts successful CI from a `main` push in this repository, checks out its exact SHA without persisting Git credentials, and checks the project through the configured CI credential before installing/building. It requires the pinned project ID, name, Pages subdomain, production branch `main` and no Git source. Missing/unexpected metadata fails closed before upload. Supplying the new project-ID variable and any credential qualification are separate owner actions; this source change performs neither.
 
