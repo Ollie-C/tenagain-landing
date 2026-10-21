@@ -1,6 +1,6 @@
 # tenagain landing site
 
-Last verified against source: 19 October 2026 (Asia/Tokyo); provider acceptance remains pending.
+Last verified against source: 21 October 2026 (Asia/Tokyo); provider acceptance remains pending.
 
 Static Astro marketing site for `https://tenagain.app`. It links into the SvelteKit application at `https://app.tenagain.app`.
 
@@ -23,12 +23,13 @@ Open `http://localhost:4321`. Development defaults to the app at `http://localho
 | `pnpm dev` | Start the Astro development server |
 | `pnpm build` | Build the static site to `dist/` |
 | `pnpm preview` | Preview the production build |
+| `node --test scripts/ops01/pages-staging.test.mjs` | Test staging identity guards offline using synthetic provider responses |
 
 ## Deployment
 
 The site is fully static and requires no runtime secrets. CI/deploy credentials stay in GitHub environments, never `PUBLIC_*` values or the built site. `PUBLIC_RELEASE_SHA` (fallback `CF_PAGES_COMMIT_SHA`, otherwise `local`) is embedded in `dist/api/release`; the deployed `/api/release` must report the exact full candidate SHA. This identity endpoint is not an application/DB health check.
 
-The build may download Google font assets through Astro. `pnpm run build` is the only checked-in quality script; this repository has no `test` or `lint` script. Generated `.astro`/`dist` output is tracked in this repository, so build in an isolated checkout and review generated churn separately.
+The build may download Google font assets through Astro. There is no package-level `test` or `lint` script; CI runs the focused Node staging-guard tests and the Astro build. Generated `.astro`/`dist` output is tracked in this repository, so build in an isolated checkout and review generated churn separately.
 
 - Canonical site URL: `https://tenagain.app`
 - App URL: `https://app.tenagain.app`
@@ -52,11 +53,16 @@ The `Deploy staging` workflow uses this repository's GitHub **staging** environm
 
 | Setting | Kind | Value |
 | --- | --- | --- |
-| `CLOUDFLARE_API_TOKEN` | Secret | Cloudflare token authorized to deploy the Pages project |
+| `CLOUDFLARE_API_TOKEN` | Secret | Cloudflare token authorized to read this Pages project/deployment metadata and deploy it |
 | `CLOUDFLARE_ACCOUNT_ID` | Secret | Account containing that project |
-| `CLOUDFLARE_PAGES_PROJECT` | Variable | Existing Pages project name |
+| `CLOUDFLARE_PAGES_PROJECT` | Variable | `tenagain-landing`, the reviewed Direct Upload project |
+| `STAGING_PAGES_PROJECT_ID` | Variable | `7b1de655-9592-4dc5-bcbf-0c5c89fa13bd`, independently verified in the 21 October owner identity receipt; setting the variable remains an owner action |
 
-Credentials in the frontend repository are not automatically available here. The workflow validates these names before installing/building; it never prints their values. The checked-in workflow deploys successful `main` CI commits to the stable `staging` preview; the production workflow manually promotes a selected commit. These files do not prove current Pages project/account identity, credentials or live deployment access; those remain operator gates.
+Credentials in the frontend repository are not automatically available here. The workflow accepts successful CI from a `main` push in this repository, checks out its exact SHA without persisting Git credentials, and checks the project through the configured CI credential before installing/building. It requires the pinned project ID, name, Pages subdomain, production branch `main` and no Git source. Missing/unexpected metadata fails closed before upload. Supplying the new project-ID variable and any credential qualification are separate owner actions; this source change performs neither.
+
+The upload uses branch `staging`. Its exact deployment ID/URL are then checked against provider preview/branch/SHA/success metadata and saved as the allowlisted `landing-staging-provider-receipt` artifact (14 days). Raw API responses, account ID, token and provider environment values are not saved by these checks. Missing action outputs, denied API reads or unexpected provider response shapes fail the workflow; an upload may already exist when a post-upload check fails. Inspect that exact deployment before deciding on a new run.
+
+A provider receipt does not establish hosted acceptance. Using the protected member session, verify `/api/release` at the receipt's immutable deployment URL reports `status: ok` and the same full SHA, then record URL/ID, timestamp and result in the private operations evidence. Keep preview Access protection in place; the script does not request the protected site or acquire Access credentials. The production workflow remains a separate manual promotion path. These local workflow checks have mocked evidence only until separately authorized integration and staging execution.
 
 ## Standalone clone and private documentation
 
