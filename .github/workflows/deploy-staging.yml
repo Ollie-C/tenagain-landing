@@ -19,7 +19,11 @@ concurrency:
 jobs:
   deploy:
     name: Deploy tested commit to Cloudflare preview
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.head_repository.full_name == github.repository }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: staging
@@ -32,21 +36,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ env.DEPLOY_SHA }}
-
-      - name: Validate Cloudflare staging configuration
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
-        run: |
-          missing=0
-          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_PAGES_PROJECT; do
-            if [[ -z "${!name}" ]]; then
-              echo "::error::Missing $name. Configure it in this repository's staging environment (token/account as secrets, project as a variable)."
-              missing=1
-            fi
-          done
-          exit "$missing"
+          persist-credentials: false
 
       - name: Set up pnpm
         uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
@@ -58,6 +48,17 @@ jobs:
         with:
           node-version: "24"
           cache: pnpm
+
+      - name: Test staging identity guards
+        run: node --test scripts/ops01/pages-staging.test.mjs
+
+      - name: Verify Cloudflare staging project before upload
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+          STAGING_PAGES_PROJECT_ID: ${{ vars.STAGING_PAGES_PROJECT_ID }}
+        run: node scripts/ops01/pages-staging.mjs preflight
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -73,12 +74,31 @@ jobs:
             <<<"$body" >/dev/null
 
       - name: Deploy stable staging preview
+        id: pages
         uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: >-
             pages deploy dist
-            --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+            --project-name=tenagain-landing
             --branch=staging
             --commit-hash=${{ env.DEPLOY_SHA }}
+
+      - name: Verify exact provider deployment and save sanitized receipt
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+          STAGING_PAGES_PROJECT_ID: ${{ vars.STAGING_PAGES_PROJECT_ID }}
+          PAGES_DEPLOYMENT_ID: ${{ steps.pages.outputs.pages-deployment-id }}
+          PAGES_DEPLOYMENT_URL: ${{ steps.pages.outputs.deployment-url }}
+        run: node scripts/ops01/pages-staging.mjs receipt
+
+      - name: Retain sanitized provider receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: landing-staging-provider-receipt
+          path: pages-staging-receipt.json
+          if-no-files-found: error
+          retention-days: 14
