@@ -30,6 +30,7 @@ jobs:
     env:
       DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
       PUBLIC_RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+      PAGES_BUILD_PROVENANCE: ${{ runner.temp }}/landing-build-provenance.json
 
     steps:
       - name: Check out tested commit
@@ -50,7 +51,7 @@ jobs:
           cache: pnpm
 
       - name: Test staging identity guards
-        run: node --test scripts/ops01/pages-staging.test.mjs
+        run: node --test scripts/ops01/*.test.mjs
 
       - name: Verify Cloudflare staging project before upload
         env:
@@ -59,6 +60,9 @@ jobs:
           CLOUDFLARE_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
           STAGING_PAGES_PROJECT_ID: ${{ vars.STAGING_PAGES_PROJECT_ID }}
         run: node scripts/ops01/pages-staging.mjs preflight
+
+      - name: Verify clean tested source before install and build
+        run: node scripts/ops01/pages-staging.mjs source-before-build
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -72,6 +76,9 @@ jobs:
           jq -e --arg sha "$DEPLOY_SHA" \
             '.status == "ok" and .release == $sha' \
             <<<"$body" >/dev/null
+
+      - name: Verify generated-only changes and hash build output
+        run: node scripts/ops01/pages-staging.mjs source-after-build
 
       - name: Deploy stable staging preview
         id: pages

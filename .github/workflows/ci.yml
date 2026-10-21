@@ -41,7 +41,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Test staging identity guards
-        run: node --test scripts/ops01/pages-staging.test.mjs
+        run: node --test scripts/ops01/*.test.mjs
 
       - name: Build static site
         run: pnpm run build

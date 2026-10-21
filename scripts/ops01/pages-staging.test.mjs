@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, unlinkSync, rmdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { configuration, preflight, receipt } from './pages-staging.mjs';
+import { configuration, preflight, receipt as providerReceipt } from './pages-staging.mjs';
 
 const env = {
   CLOUDFLARE_API_TOKEN: 'synthetic-token-never-log',
@@ -15,6 +15,11 @@ const env = {
   PAGES_DEPLOYMENT_ID: 'd'.repeat(32),
   PAGES_DEPLOYMENT_URL: 'https://1234abcd.tenagain-landing.pages.dev',
 };
+const proof = {
+  source_sha: env.DEPLOY_SHA, source_tree: 'e'.repeat(40),
+  expected_commit_dirty: false, generated_paths: [], artifact_sha256: 'f'.repeat(64), artifact_files: 3,
+};
+const receipt = (settings, fetcher, build = proof) => providerReceipt(settings, fetcher, async () => build);
 const project = {
   id: env.STAGING_PAGES_PROJECT_ID, name: 'tenagain-landing',
   subdomain: 'tenagain-landing.pages.dev', production_branch: 'main', source: null,
@@ -103,7 +108,7 @@ test('receipt is an explicit allowlist and leaves protected hosted acceptance pe
   const result = await receipt(env, mock());
   assert.equal(result.release_sha, env.DEPLOY_SHA);
   assert.equal(result.provider_deployment_status, 'success');
-  assert.match(result.hosted_release_verification, /^pending protected member/);
+  assert.match(result.hosted_release_verification, /^pending exact hosted/);
   const serialized = JSON.stringify(result);
   for (const forbidden of [env.CLOUDFLARE_API_TOKEN, env.CLOUDFLARE_ACCOUNT_ID,
     'private-payload', 'env_vars', 'deployment_configs']) assert.ok(!serialized.includes(forbidden));
@@ -116,6 +121,7 @@ test('CLI fails closed with a fixed diagnostic without secrets or network access
   assert.equal(run.status, 1);
   assert.equal(run.stdout, '');
   assert.match(run.stderr, /^::error::Pages staging identity check failed\./);
+  assert.match(run.stderr, /Unexpected staging project/);
   assert.ok(!run.stderr.includes(env.CLOUDFLARE_API_TOKEN));
 });
 
@@ -127,10 +133,10 @@ test('receipt command writes only sanitized JSON and refuses to overwrite eviden
     const { env, project, deployment } = JSON.parse(process.env.FIXTURE);
     main('receipt', env, async url => ({ ok: true, json: async () => ({
       success: true, result: url.endsWith('/tenagain-landing') ? project : deployment,
-    }) })).catch(() => { process.exitCode = 1; });
+    }) }), async () => JSON.parse(process.env.FIXTURE).proof).catch(() => { process.exitCode = 1; });
   `;
   const run = () => spawnSync(process.execPath, ['--input-type=module', '-e', code], {
-    cwd: directory, env: { FIXTURE: JSON.stringify({ env, project, deployment }) },
+    cwd: directory, env: { FIXTURE: JSON.stringify({ env, project, deployment, proof }) },
     encoding: 'utf8', timeout: 5000,
   });
   try {
@@ -147,4 +153,22 @@ test('receipt command writes only sanitized JSON and refuses to overwrite eviden
     try { unlinkSync(path); } catch (error) { if (error.code !== 'ENOENT') throw error; }
     rmdirSync(directory);
   }
+});
+
+test('dirty provider metadata requires matching verified generated-only provenance and is retained truthfully', async () => {
+  const dirty = copy(deployment);
+  dirty.deployment_trigger.metadata.commit_dirty = true;
+  await assert.rejects(receipt(env, mock(project, dirty)), /dirty flag/);
+  const generated = { ...proof, expected_commit_dirty: true, generated_paths: ['dist/api/release'] };
+  const result = await receipt(env, mock(project, dirty), generated);
+  assert.equal(result.provider_commit_dirty, true);
+  assert.equal(result.generated_changes, 1);
+  assert.equal(result.source_started_clean, true);
+  assert.equal(result.artifact_sha256, generated.artifact_sha256);
+  await assert.rejects(receipt(env, mock(), generated), /dirty flag/);
+  delete dirty.deployment_trigger.metadata.commit_dirty;
+  await assert.rejects(receipt(env, mock(project, dirty), generated), /dirty flag/);
+  await assert.rejects(providerReceipt(env, mock(project, deployment), async () => {
+    throw new Error('No build provenance');
+  }), /No build provenance/);
 });

@@ -23,7 +23,7 @@ Open `http://localhost:4321`. Development defaults to the app at `http://localho
 | `pnpm dev` | Start the Astro development server |
 | `pnpm build` | Build the static site to `dist/` |
 | `pnpm preview` | Preview the production build |
-| `node --test scripts/ops01/pages-staging.test.mjs` | Test staging identity guards offline using synthetic provider responses |
+| `node --test scripts/ops01/*.test.mjs` | Test staging identity and build provenance guards offline using synthetic responses and isolated Git fixtures |
 
 ## Deployment
 
@@ -60,7 +60,11 @@ The `Deploy staging` workflow uses this repository's GitHub **staging** environm
 
 Credentials in the frontend repository are not automatically available here. The workflow accepts successful CI from a `main` push in this repository, checks out its exact SHA without persisting Git credentials, and checks the project through the configured CI credential before installing/building. It requires the pinned project ID, name, Pages subdomain, production branch `main` and no Git source. Missing/unexpected metadata fails closed before upload. Supplying the new project-ID variable and any credential qualification are separate owner actions; this source change performs neither.
 
-The upload uses branch `staging`. Its exact deployment ID/URL are then checked against provider preview/branch/SHA/success metadata and saved as the allowlisted `landing-staging-provider-receipt` artifact (14 days). Raw API responses, account ID, token and provider environment values are not saved by these checks. Missing action outputs, denied API reads or unexpected provider response shapes fail the workflow; an upload may already exist when a post-upload check fails. Inspect that exact deployment before deciding on a new run.
+The build starts from a verified clean checkout of the tested SHA. After installation/build, changes must be confined to generated `.astro/` and `dist/` paths; source edits, new source files or moves from source into output fail before upload. A provenance file outside the checkout records the source tree, generated paths, expected dirty flag and SHA-256 of a sorted file/hash manifest covering `dist` (symlinks rejected). The artifact hash is rechecked after upload. This is source/build evidence, not an independent download/hash of Cloudflare's deployed bundle.
+
+The upload uses branch `staging`. Its exact deployment ID/URL are then checked against provider preview/branch/SHA/success metadata and saved as the allowlisted `landing-staging-provider-receipt` artifact (14 days). Cloudflare's actual dirty flag must match the locally verified generated-only state; it is retained truthfully alongside source tree and build hash, never overridden with `--commit-dirty=false`. A missing/inconsistent provenance file fails closed. Wrangler's own untracked `.wrangler/` cache is allowed only during the post-upload check; it cannot justify source changes during install/build. The older 21 October upload has no such build provenance and remains separately qualified evidence.
+
+Raw API responses, account ID, token and provider environment values are not saved by these checks. Controlled validation reasons may be logged; raw provider/filesystem/process errors remain withheld. Missing action outputs, denied API reads or unexpected provider response shapes fail the workflow; an upload may already exist when a post-upload check fails. Inspect that exact deployment before deciding on a new run.
 
 A provider receipt does not establish hosted acceptance. Using the protected member session, verify `/api/release` at the receipt's immutable deployment URL reports `status: ok` and the same full SHA, then record URL/ID, timestamp and result in the private operations evidence. Keep preview Access protection in place; the script does not request the protected site or acquire Access credentials. The production workflow remains a separate manual promotion path. These local workflow checks have mocked evidence only until separately authorized integration and staging execution.
 
