@@ -1,11 +1,13 @@
 import { writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { beginBuild, finishBuild, ProvenanceError, verifyBuildProvenance } from './build-provenance.mjs';
 
 const projectName = 'tenagain-landing';
 const subdomain = `${projectName}.pages.dev`;
 const opaqueId = /^[A-Za-z0-9-]{16,64}$/;
+class StagingError extends Error {}
 const check = (condition, message) => {
-  if (!condition) throw new Error(message);
+  if (!condition) throw new StagingError(message);
 };
 
 export function configuration(env) {
@@ -41,7 +43,7 @@ async function api(config, suffix, fetcher) {
     check(body.success === true && body.result && typeof body.result === 'object', 'API failure');
     return body.result;
   } catch {
-    throw new Error('Cloudflare identity read failed; raw response withheld');
+    throw new StagingError('Cloudflare identity read failed; raw response withheld');
   }
 }
 
@@ -63,8 +65,9 @@ function deploymentUrl(value) {
   return new URL(value).origin;
 }
 
-export async function receipt(env, fetcher = fetch) {
+export async function receipt(env, fetcher = fetch, verifyProvenance = verifyBuildProvenance) {
   const config = await preflight(env, fetcher);
+  const build = await verifyProvenance(env);
   check(opaqueId.test(env.PAGES_DEPLOYMENT_ID ?? ''), 'Missing or invalid deployment identifier');
   const url = deploymentUrl(env.PAGES_DEPLOYMENT_URL);
   const deployment = await api(config,
@@ -76,8 +79,11 @@ export async function receipt(env, fetcher = fetch) {
   check(deployment.short_id === new URL(url).hostname.split('.')[0], 'Deployment host mismatch');
   check(deployment.environment === 'preview', 'Deployment must be a preview');
   const metadata = deployment.deployment_trigger?.metadata;
-  check(metadata?.branch === 'staging' && metadata.commit_hash === config.sha
-    && metadata.commit_dirty === false, 'Deployment branch or tested SHA mismatch');
+  check(metadata?.branch === 'staging' && metadata.commit_hash === config.sha,
+    'Deployment branch or tested SHA mismatch');
+  check(typeof metadata.commit_dirty === 'boolean'
+    && metadata.commit_dirty === build.expected_commit_dirty,
+  'Deployment dirty flag differs from verified build provenance');
   check(deployment.is_skipped === false && deployment.latest_stage?.name === 'deploy'
     && deployment.latest_stage.status === 'success', 'Deployment is not successfully deployed');
   return {
@@ -93,28 +99,42 @@ export async function receipt(env, fetcher = fetch) {
     environment: 'preview',
     branch: 'staging',
     release_sha: config.sha,
+    source_tree: build.source_tree,
+    source_started_clean: true,
+    generated_changes: build.generated_paths.length,
+    provider_commit_dirty: metadata.commit_dirty,
+    artifact_sha256: build.artifact_sha256,
+    artifact_files: build.artifact_files,
     provider_deployment_status: 'success',
-    hosted_release_verification: 'pending protected member /api/release check',
+    hosted_release_verification: 'pending exact hosted /api/release and Access behavior checks',
   };
 }
 
-export async function main(mode, env = process.env, fetcher = fetch) {
+export async function main(mode, env = process.env, fetcher = fetch, verifyProvenance = verifyBuildProvenance) {
   if (mode === 'preflight') {
     await preflight(env, fetcher);
     console.log('Staging project identity and Direct Upload controls verified.');
+  } else if (mode === 'source-before-build') {
+    await beginBuild(env);
+    console.log('Exact source checkout verified clean before install/build.');
+  } else if (mode === 'source-after-build') {
+    await finishBuild(env);
+    console.log('Generated-only changes and exact built release recorded with artifact hash.');
   } else if (mode === 'receipt') {
-    const result = await receipt(env, fetcher);
+    const result = await receipt(env, fetcher, verifyProvenance);
     await writeFile('pages-staging-receipt.json', `${JSON.stringify(result, null, 2)}\n`, { flag: 'wx' });
-    console.log('Sanitized provider receipt saved; protected hosted release verification remains pending.');
+    console.log('Sanitized provider receipt saved; exact hosted release and Access checks remain pending.');
   } else {
-    throw new Error('Expected preflight or receipt');
+    throw new Error('Unknown staging verification mode');
   }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main(process.argv[2]).catch(() => {
+  main(process.argv[2]).catch(error => {
     // Even filesystem errors may contain unreviewed paths. Keep CLI failures fixed.
-    console.error('::error::Pages staging identity check failed. Review target configuration and provider evidence; raw diagnostics withheld.');
+    const reason = error instanceof StagingError || error instanceof ProvenanceError
+      ? error.message : 'Raw diagnostics withheld.';
+    console.error(`::error::Pages staging identity check failed. ${reason}`);
     process.exitCode = 1;
   });
 }

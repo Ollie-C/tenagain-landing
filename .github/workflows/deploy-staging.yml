@@ -50,7 +50,7 @@ jobs:
           cache: pnpm
 
       - name: Test staging identity guards
-        run: node --test scripts/ops01/pages-staging.test.mjs
+        run: node --test scripts/ops01/*.test.mjs
 
       - name: Verify Cloudflare staging project before upload
         env:
@@ -60,8 +60,21 @@ jobs:
           STAGING_PAGES_PROJECT_ID: ${{ vars.STAGING_PAGES_PROJECT_ID }}
         run: node scripts/ops01/pages-staging.mjs preflight
 
+      - name: Verify clean tested source before install and build
+        env:
+          PAGES_BUILD_PROVENANCE: ${{ runner.temp }}/landing-build-provenance.json
+        run: node scripts/ops01/pages-staging.mjs source-before-build
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Prepare existing Wrangler version outside application dependencies
+        run: |
+          npm install --prefix "$RUNNER_TEMP/landing-wrangler" --no-save --package-lock=false wrangler@3.90.0
+          ln -s "$RUNNER_TEMP/landing-wrangler/node_modules/wrangler" node_modules/wrangler
+          ln -s "$RUNNER_TEMP/landing-wrangler/node_modules/.bin/wrangler" node_modules/.bin/wrangler
+          test "$(node -p "require('./node_modules/wrangler/package.json').version")" = "3.90.0"
+          npx --no-install wrangler --version
 
       - name: Build landing site
         run: pnpm run build
@@ -73,12 +86,19 @@ jobs:
             '.status == "ok" and .release == $sha' \
             <<<"$body" >/dev/null
 
+      - name: Verify generated-only changes and hash build output
+        env:
+          PAGES_BUILD_PROVENANCE: ${{ runner.temp }}/landing-build-provenance.json
+        run: node scripts/ops01/pages-staging.mjs source-after-build
+
       - name: Deploy stable staging preview
         id: pages
         uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: npm
+          wranglerVersion: "3.90.0"
           command: >-
             pages deploy dist
             --project-name=tenagain-landing
@@ -93,6 +113,7 @@ jobs:
           STAGING_PAGES_PROJECT_ID: ${{ vars.STAGING_PAGES_PROJECT_ID }}
           PAGES_DEPLOYMENT_ID: ${{ steps.pages.outputs.pages-deployment-id }}
           PAGES_DEPLOYMENT_URL: ${{ steps.pages.outputs.deployment-url }}
+          PAGES_BUILD_PROVENANCE: ${{ runner.temp }}/landing-build-provenance.json
         run: node scripts/ops01/pages-staging.mjs receipt
 
       - name: Retain sanitized provider receipt
