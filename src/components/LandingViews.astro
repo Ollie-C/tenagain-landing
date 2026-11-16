@@ -12,7 +12,7 @@ import { APP_URL } from '../config';
   <section id="view-score" role="region" aria-label="Score a title" tabindex="-1" data-view-panel="score">
     <Hero />
     <section class="welcome" aria-labelledby="welcome-title">
-      <div><h2 id="welcome-title">Welcome to <strong>tenagain.</strong></h2></div>
+      <div><h2 id="welcome-title">Welcome to <strong>tenagain.</strong></h2><p class="competition-link" data-competition-fallback hidden>Can't load the monthly competition. <a href={`${APP_URL}/competitions/current`}>Open competition in the app ↗</a></p></div>
       <p class="welcome-cycle"><span>Watch,</span><span>Rate,</span><span>Rank,</span><span>Watch.</span></p>
     </section>
   </section>
@@ -28,6 +28,7 @@ import { APP_URL } from '../config';
     const arrows = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-view-prev], [data-view-next]'));
     const navigation = root.querySelector<HTMLElement>('[data-view-navigation]');
     const entry = root.querySelector<HTMLButtonElement>('[data-view-entry]');
+    const fallback = root.querySelector<HTMLElement>('[data-competition-fallback]');
     const competitionLink = root.querySelector<HTMLAnchorElement>('[data-competition-link]');
     const announcement = root.querySelector<HTMLElement>('[data-view-announcement]');
     const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-view-panel]'));
@@ -43,6 +44,7 @@ import { APP_URL } from '../config';
     let pendingMonthly = ['monthly', 'weekly'].includes(new URL(window.location.href).searchParams.get('view') || '');
     const requested = new URL(window.location.href).searchParams.get('competition') || 'current';
     const slug = requested.length <= 100 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requested) ? requested : 'current';
+    fallback?.querySelector('a')?.setAttribute('href', `${appOrigin}/competitions/${slug}`);
     function ensureFrame() {
       if (frame && !frame.getAttribute('src')) frame.src = `${appOrigin}/embed/competitions/${encodeURIComponent(slug)}`;
     }
@@ -123,8 +125,10 @@ import { APP_URL } from '../config';
         liveLabel = state.round ? `Monthly live · Round ${state.round} ↗` : 'Monthly live ↗';
         if (entry && active === 'score') entry.textContent = liveLabel;
         if (competitionLink && typeof state.slug === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(state.slug)) competitionLink.href = `${appOrigin}/competitions/${state.slug}`;
+        if (fallback) fallback.hidden = true;
         setAvailability(state.active);
       } catch {
+        if (fallback && pendingMonthly) fallback.hidden = false;
         setAvailability(false);
       }
     }
