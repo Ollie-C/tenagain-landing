@@ -1,8 +1,7 @@
 ---
 import { APP_URL, campaignHeroes, links } from '../config';
 
-const initialHeroIndex = campaignHeroes.findIndex(hero => hero.id === 'shogun');
-const initialHeroes = campaignHeroes.filter(hero => hero.mediaType === 'tv_show');
+const initialHeroIndex = 0;
 const trustLinks = [
   { href: links.privacy, label: 'Privacy' },
   { href: links.terms, label: 'Terms' },
@@ -106,14 +105,14 @@ const trustLinks = [
 
   <div class="campaign-hero__carousel">
     <div class="campaign-hero__dots" role="tablist" aria-label="Featured titles" data-carousel-controls>
-      {initialHeroes.map((hero, position) => (
+      {campaignHeroes.map((hero, index) => (
         <button
           type="button"
-          class:list={['campaign-hero__dot', position === 2 && 'is-active']}
-          data-dot={position + 3}
-          data-dot-position={position}
+          class:list={['campaign-hero__dot', index === initialHeroIndex && 'is-active']}
+          data-dot={index}
+          tabindex={index === initialHeroIndex ? 0 : -1}
           role="tab"
-          aria-selected={position === 2 ? 'true' : 'false'}
+          aria-selected={index === initialHeroIndex ? 'true' : 'false'}
           aria-label={`Show ${hero.title}`}
         >
           <span class="sr-only">{hero.title}</span>
@@ -169,9 +168,6 @@ const trustLinks = [
   const carouselControls = root?.querySelector<HTMLElement>(
     '[data-carousel-controls]',
   );
-  const modeButtons = Array.from(
-    document.querySelectorAll<HTMLButtonElement>('[data-mode-option]'),
-  );
   const heroItems: HeroItem[] = root
     ? Array.from(root.querySelectorAll<HTMLElement>('[data-hero-item]')).map(
         (node) => ({
@@ -196,24 +192,8 @@ const trustLinks = [
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let pixelHero: PixelHeroController | null = null;
   let pixelHeroPromise: Promise<PixelHeroController | null> | null = null;
-  const indicesByMode: Record<MediaMode, number[]> = {
-    movie: heroItems
-      .filter((item) => item.mediaType === 'movie')
-      .map((item) => item.index),
-    tv_show: heroItems
-      .filter((item) => item.mediaType === 'tv_show')
-      .map((item) => item.index),
-  };
-  const activeByMode: Record<MediaMode, number> = {
-    movie: indicesByMode.movie[0] ?? 0,
-    tv_show:
-      heroItems.find((item) => item.id === 'shogun')?.index ??
-      indicesByMode.tv_show[0] ??
-      3,
-  };
-
-  let activeMode: MediaMode = 'tv_show';
-  let activeIndex = activeByMode.tv_show;
+  let activeIndex = 0;
+  let activeMode: MediaMode = heroItems[activeIndex]?.mediaType ?? 'tv_show';
   let scoreEdited = false;
   let rotationTimer: number | undefined;
   let resizeTimer: number | undefined;
@@ -249,12 +229,7 @@ const trustLinks = [
   }
 
   function preloadAround(index: number) {
-    const modeIndices = indicesByMode[activeMode];
-    const position = modeIndices.indexOf(index);
-    const preloadIndices = [
-      index,
-      modeIndices[(position + 1) % modeIndices.length],
-    ];
+    const preloadIndices = [index, (index + 1) % heroItems.length];
     const large = window.matchMedia('(min-width: 1024px)').matches;
     for (const preloadIndex of preloadIndices) {
       const item = heroItems[preloadIndex];
@@ -286,11 +261,7 @@ const trustLinks = [
   }
 
   function nextIndex(direction = 1) {
-    const modeIndices = indicesByMode[activeMode];
-    const position = modeIndices.indexOf(activeIndex);
-    return modeIndices[
-      (position + direction + modeIndices.length) % modeIndices.length
-    ];
+    return (activeIndex + direction + heroItems.length) % heroItems.length;
   }
 
   function revealCopy() {
@@ -305,7 +276,6 @@ const trustLinks = [
     const titleChanged = activeIndex !== index;
     activeIndex = index;
     activeMode = selected.mediaType;
-    activeByMode[activeMode] = index;
     // Controls stay usable while the optional background effect loads or plays.
     revealCopy();
     canvas?.classList.remove('is-active');
@@ -342,25 +312,11 @@ const trustLinks = [
       node.classList.toggle('is-active', active);
       node.setAttribute('aria-hidden', String(!active));
     });
-    const modeIndices = indicesByMode[activeMode];
     dots.forEach((dot) => {
-      const position = Number(dot.dataset.dotPosition);
-      const dotIndex = modeIndices[position];
-      const item = heroItems[dotIndex];
-      if (!item) return;
-      dot.dataset.dot = String(dotIndex);
-      dot.classList.toggle('is-active', dotIndex === index);
-      dot.setAttribute('aria-selected', String(dotIndex === index));
-      dot.setAttribute('aria-label', `Show ${item.title}`);
-      const label = dot.querySelector('.sr-only');
-      if (label) label.textContent = item.title;
-      dot.tabIndex = dotIndex === index ? 0 : -1;
-    });
-    modeButtons.forEach((button) => {
-      const active = button.dataset.modeOption === activeMode;
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-checked', String(active));
-      button.tabIndex = active ? 0 : -1;
+      const active = Number(dot.dataset.dot) === index;
+      dot.classList.toggle('is-active', active);
+      dot.setAttribute('aria-selected', String(active));
+      dot.tabIndex = active ? 0 : -1;
     });
 
     updateAppLinks();
@@ -414,23 +370,6 @@ const trustLinks = [
         }
       });
   }
-
-  modeButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      const mode = button.dataset.modeOption === 'tv_show' ? 'tv_show' : 'movie';
-      select(activeByMode[mode]);
-    });
-    button.addEventListener('keydown', (event) => {
-      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-      event.preventDefault();
-      const mode: MediaMode = activeMode === 'movie' ? 'tv_show' : 'movie';
-      const target = modeButtons.find(
-        (candidate) => candidate.dataset.modeOption === mode,
-      );
-      target?.focus();
-      select(activeByMode[mode]);
-    });
-  });
 
   dots.forEach((dot) => {
     dot.addEventListener('click', () => select(Number(dot.dataset.dot)));
@@ -570,7 +509,7 @@ const trustLinks = [
     window.location.assign(destination.toString());
   });
 
-  const focusRegion = [carouselControls, form, ...details, ...modeButtons].filter(
+  const focusRegion = [carouselControls, form, ...details].filter(
     Boolean,
   ) as HTMLElement[];
   focusRegion.forEach((region) => {

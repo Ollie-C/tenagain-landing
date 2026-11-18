@@ -29,6 +29,15 @@ export type CampaignHero = {
 
 export const campaignHeroes: CampaignHero[] = [
 	{
+		id: 'shogun',
+		mediaType: 'tv_show',
+		tmdbId: 126308,
+		title: 'Shōgun',
+		year: 2024,
+		byline: 'Rachel Kondo & Justin Marks',
+		creditUrl: 'https://www.themoviedb.org/tv/126308-shogun'
+	},
+	{
 		id: 'sunshine',
 		mediaType: 'movie',
 		tmdbId: 1272,
@@ -36,24 +45,6 @@ export const campaignHeroes: CampaignHero[] = [
 		year: 2007,
 		byline: 'Danny Boyle',
 		creditUrl: 'https://www.themoviedb.org/movie/1272-sunshine'
-	},
-	{
-		id: 'parasite',
-		mediaType: 'movie',
-		tmdbId: 496243,
-		title: 'Parasite',
-		year: 2019,
-		byline: 'Bong Joon Ho',
-		creditUrl: 'https://www.themoviedb.org/movie/496243-parasite'
-	},
-	{
-		id: 'grand-budapest',
-		mediaType: 'movie',
-		tmdbId: 120467,
-		title: 'The Grand Budapest Hotel',
-		year: 2014,
-		byline: 'Wes Anderson',
-		creditUrl: 'https://www.themoviedb.org/movie/120467-the-grand-budapest-hotel'
 	},
 	{
 		id: 'severance',
@@ -65,6 +56,15 @@ export const campaignHeroes: CampaignHero[] = [
 		creditUrl: 'https://www.themoviedb.org/tv/95396-severance'
 	},
 	{
+		id: 'parasite',
+		mediaType: 'movie',
+		tmdbId: 496243,
+		title: 'Parasite',
+		year: 2019,
+		byline: 'Bong Joon Ho',
+		creditUrl: 'https://www.themoviedb.org/movie/496243-parasite'
+	},
+	{
 		id: 'the-bear',
 		mediaType: 'tv_show',
 		tmdbId: 136315,
@@ -74,12 +74,12 @@ export const campaignHeroes: CampaignHero[] = [
 		creditUrl: 'https://www.themoviedb.org/tv/136315-the-bear'
 	},
 	{
-		id: 'shogun',
-		mediaType: 'tv_show',
-		tmdbId: 126308,
-		title: 'Shōgun',
-		year: 2024,
-		byline: 'Rachel Kondo & Justin Marks',
-		creditUrl: 'https://www.themoviedb.org/tv/126308-shogun'
+		id: 'grand-budapest',
+		mediaType: 'movie',
+		tmdbId: 120467,
+		title: 'The Grand Budapest Hotel',
+		year: 2014,
+		byline: 'Wes Anderson',
+		creditUrl: 'https://www.themoviedb.org/movie/120467-the-grand-budapest-hotel'
 	}
 ];
