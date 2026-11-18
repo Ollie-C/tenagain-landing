@@ -12,12 +12,12 @@ import { APP_URL } from '../config';
   <section id="view-score" role="region" aria-label="Score a title" tabindex="-1" data-view-panel="score">
     <Hero />
     <section class="welcome" aria-labelledby="welcome-title">
-      <div><h2 id="welcome-title">Welcome to <strong>tenagain.</strong></h2><p class="competition-link" data-competition-fallback hidden>Can't load the monthly competition. <a href={`${APP_URL}/competitions/current`}>Open competition in the app ↗</a></p></div>
+      <div><h2 id="welcome-title">Welcome to <strong>tenagain.</strong></h2><p class="competition-link" data-competition-fallback hidden>Can't load the monthly competition. Try refreshing the page.</p></div>
       <p class="welcome-cycle"><span>Watch,</span><span>Rate,</span><span>Rank,</span><span>Watch.</span></p>
     </section>
   </section>
   <section id="view-monthly" role="region" aria-label="Monthly competition" tabindex="-1" data-view-panel="monthly" hidden>
-    <div class="monthly-stage"><p class="competition-link"><a href={`${APP_URL}/competitions/current`} data-competition-link>Open competition in the app ↗</a></p><iframe title="tenagain monthly competition" data-weekly-frame allow="clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+    <div class="monthly-stage landing-content-width"><iframe title="tenagain monthly competition" data-weekly-frame allow="clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
   </section>
   <div class="view-bricks" data-view-bricks aria-hidden="true"></div>
 </div>
@@ -29,7 +29,6 @@ import { APP_URL } from '../config';
     const navigation = root.querySelector<HTMLElement>('[data-view-navigation]');
     const entry = root.querySelector<HTMLButtonElement>('[data-view-entry]');
     const fallback = root.querySelector<HTMLElement>('[data-competition-fallback]');
-    const competitionLink = root.querySelector<HTMLAnchorElement>('[data-competition-link]');
     const announcement = root.querySelector<HTMLElement>('[data-view-announcement]');
     const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-view-panel]'));
     const frame = root.querySelector<HTMLIFrameElement>('[data-weekly-frame]');
@@ -44,7 +43,6 @@ import { APP_URL } from '../config';
     let pendingMonthly = ['monthly', 'weekly'].includes(new URL(window.location.href).searchParams.get('view') || '');
     const requested = new URL(window.location.href).searchParams.get('competition') || 'current';
     const slug = requested.length <= 100 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requested) ? requested : 'current';
-    fallback?.querySelector('a')?.setAttribute('href', `${appOrigin}/competitions/${slug}`);
     function ensureFrame() {
       if (frame && !frame.getAttribute('src')) frame.src = `${appOrigin}/embed/competitions/${encodeURIComponent(slug)}`;
     }
@@ -124,7 +122,6 @@ import { APP_URL } from '../config';
         if (typeof state.active !== 'boolean') throw new Error('Invalid availability');
         liveLabel = state.round ? `Monthly live · Round ${state.round} ↗` : 'Monthly live ↗';
         if (entry && active === 'score') entry.textContent = liveLabel;
-        if (competitionLink && typeof state.slug === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(state.slug)) competitionLink.href = `${appOrigin}/competitions/${state.slug}`;
         if (fallback) fallback.hidden = true;
         setAvailability(state.active);
       } catch {
@@ -174,8 +171,8 @@ import { APP_URL } from '../config';
 .view-arrow svg{width:14px;height:18px}
 .view-arrow:hover,.view-arrow:active{color:#fff;background:#ffffff12;box-shadow:none;transform:none}
 .view-arrow:focus-visible{outline:2px solid #fff;outline-offset:0}
-.monthly-stage{width:calc(100% - 160px);max-width:1180px;margin:auto;padding:10rem 0 3rem;min-height:100svh}
-.monthly-stage iframe{display:block;width:100%;height:850px;min-height:0;border:0;background:#101010;color-scheme:dark}
+.monthly-stage{padding-block:8.5rem 3rem;min-height:100svh}
+.monthly-stage iframe{display:block;width:100%;height:850px;min-height:0;border:0;color-scheme:dark}
 .welcome{max-width:1180px;margin:auto;padding:72px 48px 32px;display:grid;grid-template-columns:1fr 1fr;gap:24px;color:#eee;border-top:1px solid #333}
 .welcome h2{font-size:clamp(20px,2.5vw,30px);font-weight:400;line-height:1.4;margin:4px 0 0;color:#aaa}
 .welcome h2 strong{color:#fff;font-weight:600}
@@ -183,9 +180,7 @@ import { APP_URL } from '../config';
 .welcome-cycle span{display:block}.welcome-cycle span:last-child{color:#777}
 
 :global(body){background:#0a0a0a}
-:global(body[data-landing-view=monthly]){background:#101010!important}
 :global(body[data-landing-view=monthly]::before),:global(body[data-landing-view=monthly]::after),:global(body[data-landing-view=monthly] .landing-nav::after){display:none}
-:global(body[data-landing-view=monthly] .media-switcher){visibility:hidden}
-@media(max-width:639px){.view-navigation{top:8rem}}
-@media(max-width:760px){.monthly-stage{width:calc(100% - 80px);padding:12rem 0 2rem}.welcome{padding:44px 32px 28px;grid-template-columns:1fr;gap:24px}.welcome-cycle{font-size:52px}}
+@media(max-width:639px){.view-navigation{top:5rem}.monthly-stage{padding-block:8.25rem 2rem}}
+@media(max-width:760px){.welcome{padding:44px 32px 28px;grid-template-columns:1fr;gap:24px}.welcome-cycle{font-size:52px}}
 </style>
