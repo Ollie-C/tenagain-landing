@@ -130,6 +130,7 @@ const trustLinks = [
 </section>
 
 <script>
+  import { isLandingHeroes } from '../scripts/landingHeroes';
   import {
     isScoreDistribution,
     scorePlacement,
@@ -141,6 +142,7 @@ const trustLinks = [
     (typeof import('../scripts/pixelHero'))['createPixelHero']
   >;
   type HeroItem = {
+    defaultScore: number;
     node: HTMLElement;
     index: number;
     id: string;
@@ -172,6 +174,7 @@ const trustLinks = [
     ? Array.from(root.querySelectorAll<HTMLElement>('[data-hero-item]')).map(
         (node) => ({
           node,
+          defaultScore: 8.3,
           index: Number(node.dataset.index),
           id: node.dataset.id ?? '',
           mediaType: node.dataset.mediaType === 'tv_show' ? 'tv_show' : 'movie',
@@ -228,6 +231,10 @@ const trustLinks = [
     }
   }
 
+  function backdropUrl(item: HeroItem, large: boolean) {
+    return item.node.dataset.backdropUrl || `/heroes/${item.id}-${large ? 'lg' : 'sm'}.jpg`;
+  }
+
   function preloadAround(index: number) {
     const preloadIndices = [index, (index + 1) % heroItems.length];
     const large = window.matchMedia('(min-width: 1024px)').matches;
@@ -235,9 +242,9 @@ const trustLinks = [
       const item = heroItems[preloadIndex];
       if (!item) continue;
       const backdrop = new Image();
-      backdrop.src = `/heroes/${item.id}-${large ? 'lg' : 'sm'}.jpg`;
+      backdrop.src = backdropUrl(item, large);
       const poster = new Image();
-      poster.src = `/heroes/${item.id}-poster.jpg`;
+      poster.src = item.node.dataset.posterUrl || `/heroes/${item.id}-poster.jpg`;
     }
   }
 
@@ -344,7 +351,7 @@ const trustLinks = [
           return;
         }
         return controller.play(
-          `/heroes/${selected.id}-${large ? 'lg' : 'sm'}.jpg`,
+          backdropUrl(selected, large),
           {
             onStart: () => canvas.classList.add('is-active'),
             onProgress: (progress) => {
@@ -403,7 +410,7 @@ const trustLinks = [
   function resetScore() {
     scoreEdited = false;
     if (scoreInput)
-      scoreInput.value = (6 + Math.floor(Math.random() * 40) / 10).toFixed(1);
+      scoreInput.value = (heroItems[activeIndex]?.defaultScore ?? 8.3).toFixed(1);
     if (scoreSubmit) {
       scoreSubmit.hidden = true;
       scoreSubmit.disabled = true;
@@ -555,6 +562,39 @@ const trustLinks = [
 
   resetScore();
   select(activeIndex, false);
+
+  // Keep bundled titles when the public configuration is unavailable.
+  // Avoid replacing the score or title after the visitor has started interacting.
+  let interacted = false;
+  root?.addEventListener('pointerdown', () => { interacted = true; }, {once: true});
+  root?.addEventListener('keydown', () => { interacted = true; }, {once: true});
+  void fetch(appUrl('/api/landing/features'), {credentials: 'omit', signal: AbortSignal.timeout(5000)})
+    .then(async response => {
+      if (!response.ok) return;
+      const data = await response.json();
+      if (!isLandingHeroes(data.heroes) || interacted || scoreEdited) return;
+      data.heroes.forEach((hero, index) => {
+        const item = heroItems[index];
+        Object.assign(item, {id: hero.id, mediaType: hero.mediaType, tmdbId: hero.tmdbId, title: hero.title, defaultScore: hero.defaultScore});
+        Object.assign(item.node.dataset, {id: hero.id, mediaType: hero.mediaType, tmdbId: String(hero.tmdbId), title: hero.title, creditUrl: hero.creditUrl, backdropUrl: hero.backdropUrl, posterUrl: hero.posterUrl});
+        const img = item.node.querySelector('img');
+        const source = item.node.querySelector('source');
+        if (img) { img.src = hero.backdropUrl; img.dataset.src = hero.backdropUrl; }
+        if (source) { source.srcset = hero.backdropUrl; source.dataset.srcset = hero.backdropUrl; }
+        const poster = posters[index] as HTMLImageElement;
+        poster.src = hero.posterUrl; poster.dataset.src = hero.posterUrl; poster.alt = `${hero.title} poster`;
+        const trigger = details[index].querySelector('[data-title-trigger]');
+        if (trigger?.firstChild) trigger.firstChild.textContent = hero.title;
+        const info = details[index].querySelector('[data-title-info]');
+        if (info) info.textContent = `${hero.mediaType === 'movie' ? 'Film' : 'Series'} · ${hero.year}${hero.byline ? ' · ' + hero.byline : ''}`;
+        dots[index].setAttribute('aria-label', `Show ${hero.title}`);
+        const label = dots[index].querySelector('span');
+        if (label) label.textContent = hero.title;
+      });
+      activeIndex = 0;
+      resetScore();
+      select(0, false);
+    }).catch(() => {});
 </script>
 
 <style>
