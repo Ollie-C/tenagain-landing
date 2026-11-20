@@ -93,3 +93,11 @@ git clone "${DOCS_REPOSITORY_URL:?Set the authorized private docs URL}" ../docs
 Keep the directory names `tenagain-microservice` and `docs`. Backend Compose resolves its AI build context relative to the backend directory. With a backend worktree, place an AI worktree at its sibling `tenagain-microservice` path too; a checkout elsewhere does not satisfy that path.
 
 After cloning docs, open `../docs/README.md` and `../docs/getting-started/local-development.md`. These are local workspace paths, not public documentation URLs. The private docs clone supplies the source hierarchy, operational runbooks and `operations/pre-beta-release-checklist.md`, the final beta acceptance source. A repository README alone does not certify provider configuration or release readiness.
+
+## Admin-managed featured titles
+
+In the app, open **Admin → Edit landing titles** (`/admin/landing`). Search for films or series, choose exactly six distinct titles, arrange them using the arrows, and set each starting score from 0–10 in steps of 0.1. Save the whole lineup. The first title opens by default; any mix of films and series is allowed. Artwork and title details come from TMDB. A title needs a poster and backdrop to be saved.
+
+The landing loads `/api/landing/features` from `PUBLIC_APP_URL`, without account credentials. The app allows the configured `PUBLIC_LANDING_URL` origin through CORS and the beta gate. Updates are cached for about 30 seconds and do not require a landing redeploy. Bundled titles remain the fallback before the first save or if configuration cannot be loaded. A late configuration response does not replace a title or score the visitor has already started interacting with.
+
+These starting scores are editable examples, not community scores. The future switch to community scores is deferred. Deploy the backend migration and app endpoint before deploying this landing change; existing landing behaviour remains available if the endpoint is missing.
