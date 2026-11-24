@@ -30,6 +30,7 @@ jobs:
     env:
       DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
       PUBLIC_RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+      PUBLIC_APP_URL: https://staging.tenagain-frontend.pages.dev
 
     steps:
       - name: Check out tested commit
