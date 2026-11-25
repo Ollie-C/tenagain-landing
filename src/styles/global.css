@@ -178,15 +178,23 @@ html::after {
   }
   .landing-nav__brand {
     display: inline-flex;
-    width: 2.75rem;
+    width: fit-content;
     height: 2.75rem;
     align-items: center;
-    justify-content: center;
+    gap: 0.7rem;
     color: #fff;
   }
   .landing-nav__brand-mark {
-    width: 100%;
-    height: 100%;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: 0 0 auto;
+  }
+  .landing-nav__brand-name {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.06em;
+    line-height: 1;
   }
   .landing-nav__actions {
     display: flex;
@@ -309,8 +317,14 @@ html::after {
     gap: 0.75rem;
   }
   .landing-nav__brand {
+    height: 2.5rem;
+  }
+  .landing-nav__brand-mark {
     width: 2.5rem;
     height: 2.5rem;
+  }
+  .landing-nav__brand-name {
+    font-size: 1.65rem;
   }
   .landing-nav__actions {
     grid-column: 2;
