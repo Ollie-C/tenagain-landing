@@ -4,7 +4,7 @@ import { APP_URL } from '../config';
 ---
 <div class="landing-views" data-landing-views data-app-url={APP_URL}>
   <nav class="view-navigation" aria-label="Landing views" data-view-navigation hidden>
-    <button type="button" class="view-entry" data-view-entry aria-controls="view-monthly">Monthly live ↗</button>
+    <button type="button" class="view-entry" data-view-entry aria-controls="view-monthly">Elimination</button>
     <button type="button" class="view-arrow view-arrow--prev" data-view-prev aria-label="Previous landing view" aria-controls="view-monthly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m15 4-8 8 8 8" /></svg></button>
     <button type="button" class="view-arrow view-arrow--next" data-view-next aria-label="Next landing view" aria-controls="view-monthly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 4 8 8-8 8" /></svg></button>
   </nav>
@@ -12,12 +12,12 @@ import { APP_URL } from '../config';
   <section id="view-score" role="region" aria-label="Score a title" tabindex="-1" data-view-panel="score">
     <Hero />
     <section class="welcome" aria-labelledby="welcome-title">
-      <div><h2 id="welcome-title">Welcome to <strong>tenagain.</strong></h2><p class="competition-link" data-competition-fallback hidden>Can't load the monthly competition. Try refreshing the page.</p></div>
+      <div><h2 id="welcome-title">Welcome to <strong>tenagain.</strong></h2><p class="competition-link" data-competition-fallback hidden>Can't load the Elimination competition. Try refreshing the page.</p></div>
       <p class="welcome-cycle"><span>Watch,</span><span>Rate,</span><span>Rank,</span><span>Watch.</span></p>
     </section>
   </section>
-  <section id="view-monthly" role="region" aria-label="Monthly competition" tabindex="-1" data-view-panel="monthly" hidden>
-    <div class="monthly-stage landing-content-width"><iframe title="tenagain monthly competition" data-weekly-frame allow="clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+  <section id="view-monthly" role="region" aria-label="Elimination competition" tabindex="-1" data-view-panel="monthly" hidden>
+    <div class="monthly-stage landing-content-width"><iframe title="tenagain Elimination competition" data-weekly-frame allow="clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
   </section>
   <div class="view-bricks" data-view-bricks aria-hidden="true"></div>
 </div>
@@ -39,7 +39,7 @@ import { APP_URL } from '../config';
     let animations: Animation[] = [];
     let active = 'score';
     let availabilityKnown = false;
-    let liveLabel = 'Monthly live ↗';
+    let liveLabel = 'Elimination';
     let pendingMonthly = ['monthly', 'weekly'].includes(new URL(window.location.href).searchParams.get('view') || '');
     const requested = new URL(window.location.href).searchParams.get('competition') || 'current';
     const slug = requested.length <= 100 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requested) ? requested : 'current';
@@ -82,9 +82,9 @@ import { APP_URL } from '../config';
       panels.forEach(panel => { panel.hidden = panel.dataset.viewPanel !== active; });
       const panel = panels.find(panel => panel.dataset.viewPanel === active);
       if (panel && previous !== active) reveal(panel, active === 'monthly' ? 1 : -1);
-      if (announcement) announcement.textContent = `${active === 'monthly' ? 'Monthly competition' : 'Score a title'}${names.length > 1 ? ` · view ${names.indexOf(active) + 1} of 2` : ''}`;
+      if (announcement) announcement.textContent = `${active === 'monthly' ? 'Elimination competition' : 'Score a title'}${names.length > 1 ? ` · view ${names.indexOf(active) + 1} of 2` : ''}`;
       arrows.forEach(arrow => arrow.setAttribute('aria-controls', `view-${active === 'score' ? 'monthly' : 'score'}`));
-      if (entry) { entry.textContent = active === 'score' ? liveLabel : 'Score a title ↗'; entry.setAttribute('aria-controls', `view-${active === 'score' ? 'monthly' : 'score'}`); }
+      if (entry) { entry.textContent = active === 'score' ? liveLabel : 'Score a title'; entry.setAttribute('aria-controls', `view-${active === 'score' ? 'monthly' : 'score'}`); entry.setAttribute('aria-pressed', String(active === 'monthly')); }
       if (focus) panel?.focus({preventScroll: true});
       document.body.dataset.landingView = active;
       if (history) {
@@ -120,7 +120,7 @@ import { APP_URL } from '../config';
         if (!response.ok) throw new Error('Availability unavailable');
         const state = await response.json();
         if (typeof state.active !== 'boolean') throw new Error('Invalid availability');
-        liveLabel = state.round ? `Monthly live · Round ${state.round} ↗` : 'Monthly live ↗';
+        liveLabel = 'Elimination';
         if (entry && active === 'score') entry.textContent = liveLabel;
         if (fallback) fallback.hidden = true;
         setAvailability(state.active);
@@ -162,11 +162,13 @@ import { APP_URL } from '../config';
 <style>
 [hidden]{display:none!important}
 .view-bricks{position:fixed;inset:0;z-index:25;display:grid;grid-template-rows:repeat(8,1fr);pointer-events:none}
-.view-navigation{position:fixed;top:5.25rem;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 3rem);z-index:30;display:flex;align-items:center;gap:4px;padding:2px;border:1px solid #ffffff40;background:#101010b3;color:#fff;backdrop-filter:blur(10px)}
-.view-entry{order:1;min-height:32px;padding:4px 8px;border:0;background:transparent;color:#ddd;font-size:11px;box-shadow:none}
-.view-entry:hover{background:#ffffff12;color:#fff;transform:none;box-shadow:none}
+.view-navigation{position:fixed;top:0;height:6rem;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 12rem);z-index:60;display:flex;align-items:stretch;gap:4px;padding:0;border:0;background:linear-gradient(90deg,#050505b8,#050505cc 8%,#050505cc 92%,#050505b8);color:#fff;backdrop-filter:blur(10px)}
+.view-entry{height:100%;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:4px 8px;border:0;border-radius:0;background:transparent;color:#fff;font-family:var(--font-sans);font-size:1rem;font-weight:650;line-height:1.1;letter-spacing:.13em;text-transform:uppercase;white-space:nowrap;box-shadow:none;cursor:pointer;transition:transform 220ms var(--ease-soft)}
+.view-entry:hover,.view-entry[aria-pressed=true]{color:#fff;background:transparent;font-weight:850;transform:scale(1.04);box-shadow:none}
+.view-entry:focus-visible{outline:2px solid #fff;outline-offset:4px}
+@media(max-width:639px){.view-entry{min-height:36px;padding:.5rem;border:1px solid #fff;border-top:0;border-radius:var(--radius-sm);font-size:.75rem;letter-spacing:.1em}.view-entry[aria-pressed=true]{background:#fff;color:#050505;box-shadow:2px 2px 0 #fff;transform:none}}
 .competition-link{font-size:13px;line-height:1.5;color:#bbb;margin:12px 0 16px}
-.view-arrow{display:flex;align-items:center;justify-content:center;width:28px;height:32px;padding:6px;border:0;box-shadow:none;background:transparent;color:#ccc;cursor:pointer;border-radius:0}
+.view-arrow{display:none;align-items:center;justify-content:center;width:28px;height:32px;padding:6px;border:0;box-shadow:none;background:transparent;color:#ccc;cursor:pointer;border-radius:0}
 .view-arrow--prev{order:0}.view-arrow--next{order:2}
 .view-arrow svg{width:14px;height:18px}
 .view-arrow:hover,.view-arrow:active{color:#fff;background:#ffffff12;box-shadow:none;transform:none}
@@ -181,6 +183,6 @@ import { APP_URL } from '../config';
 
 :global(body){background:#0a0a0a}
 :global(body[data-landing-view=monthly]::before),:global(body[data-landing-view=monthly]::after),:global(body[data-landing-view=monthly] .landing-nav::after){display:none}
-@media(max-width:639px){.view-navigation{top:5rem}.monthly-stage{padding-block:8.25rem 2rem}}
+@media(max-width:639px){.view-navigation{top:0;height:5.25rem}.monthly-stage{padding-block:8.25rem 2rem}}
 @media(max-width:760px){.welcome{padding:44px 32px 28px;grid-template-columns:1fr;gap:24px}.welcome-cycle{font-size:52px}}
 </style>

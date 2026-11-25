@@ -31,7 +31,7 @@ const fragmentShader = `
 		float intro = clamp(uIntro, 0.0, 1.0);
 		float eased = smoothstep(0.0, 1.0, intro);
 		float motion = 1.0 - eased;
-		float frequency = mix(12.0, 28.8, eased);
+		float frequency = mix(0.36 * 0.42, 0.36, eased) * 80.0;
 		vec2 position = vUv;
 		position.x *= uImageAspect;
 		vec2 cellUv = position * frequency;
@@ -45,17 +45,13 @@ const fragmentShader = `
 		float luminance = dot(textureColor.rgb, vec3(0.299, 0.587, 0.114));
 
 		vec2 q = abs(grid);
-		float hex = max(q.x * 0.866025 + q.y * 0.5, q.y);
-		float ringOne = abs(hex - 0.12);
-		float ringTwo = abs(hex - 0.26);
-		float ringThree = abs(hex - 0.4);
-		float sdf = luminance < 0.2
-			? min(min(ringOne, ringTwo), ringThree)
-			: luminance < 0.42
-				? min(ringOne, ringTwo)
-				: luminance < 0.68
-					? ringOne
-					: 1.0;
+		float hex = max(q.x * 0.5 + q.y * 0.866025, q.x);
+		float d1 = abs(hex - 0.1);
+		float d2 = abs(hex - 0.25);
+		float d3 = min(abs(hex - 0.15), abs(hex - 0.35));
+		float d4 = min(d3, abs(hex - 0.05));
+		float d5 = min(min(abs(hex - 0.1), abs(hex - 0.25)), abs(hex - 0.4));
+		float sdf = luminance < 0.2 ? d5 : luminance < 0.35 ? d4 : luminance < 0.5 ? d3 : luminance < 0.65 ? d2 : luminance < 0.8 ? d1 : 1.0;
 
 		float pixelSize = frequency / uPixelsPerUV;
 		float lineMask = 1.0 - smoothstep(0.024 - pixelSize * 1.5, 0.024 + pixelSize * 1.5, sdf);
@@ -195,6 +191,7 @@ export function createPixelHero(canvas: HTMLCanvasElement) {
 			geometry?.dispose();
 			material?.dispose();
 			renderer?.dispose();
+			renderer?.forceContextLoss();
 			webglCanvas.width = 0;
 			webglCanvas.height = 0;
 		}

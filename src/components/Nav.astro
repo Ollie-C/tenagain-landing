@@ -11,13 +11,23 @@ const initialRedirect = encodeURIComponent('/discover?mediaType=tv_show');
     <a href="/" class="landing-nav__brand" aria-label="tenagain home">TA</a>
 
     <div class="landing-nav__actions">
-      <a href={`${APP_URL}/login?redirect=${initialRedirect}`} class="landing-nav__signin" data-app-signin>Sign in</a>
-      <a href={APP_URL} class="landing-nav__open"><span class="open-label-wide">Open tenagain</span><span class="open-label-small">Open app</span><span aria-hidden="true">↗</span></a>
+      <a href={`${APP_URL}/login?redirect=${initialRedirect}`} class="landing-nav__signin" data-app-signin hidden>Sign in</a>
+      <a href={APP_URL} class="landing-nav__open">Enter</a>
     </div>
   </nav>
 </header>
 
+<script>
+  import { APP_URL } from '../config';
+  const signIn = document.querySelector<HTMLAnchorElement>('[data-app-signin]');
+  void fetch(`${APP_URL}/api/landing/session`, { credentials: 'include', signal: AbortSignal.timeout(5000) })
+    .then(response => response.ok ? response.json() : null)
+    .then(session => { if (signIn) signIn.hidden = session?.signedIn === true; })
+    .catch(() => { if (signIn) signIn.hidden = false; });
+</script>
 <style>
+  [hidden] { display: none !important; }
+
   .landing-nav__signin {white-space:nowrap}
   .open-label-small {display:none}
   @media(max-width:639px){.open-label-small{display:inline}.open-label-wide{display:none}}
