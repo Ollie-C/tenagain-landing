@@ -1,5 +1,6 @@
 ---
 import { APP_URL } from '../config';
+import BrandMark from './BrandMark.astro';
 
 const initialRedirect = encodeURIComponent('/discover?mediaType=tv_show');
 ---
@@ -8,7 +9,9 @@ const initialRedirect = encodeURIComponent('/discover?mediaType=tv_show');
 
 <header class="landing-nav">
   <nav class="landing-nav__inner" aria-label="Main navigation">
-    <a href="/" class="landing-nav__brand" aria-label="tenagain home">TA</a>
+    <a href="/" class="landing-nav__brand" aria-label="tenagain home">
+      <BrandMark class="landing-nav__brand-mark" />
+    </a>
 
     <div class="landing-nav__actions">
       <a href={`${APP_URL}/login?redirect=${initialRedirect}`} class="landing-nav__signin" data-app-signin hidden>Sign in</a>
